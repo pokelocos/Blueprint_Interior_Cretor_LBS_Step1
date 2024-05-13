@@ -6,162 +6,12 @@ using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public static class Directions
-{
-    public static List<Vector2Int> directions_8 = new List<Vector2Int>()
-    {
-        new Vector2Int(1, 0),  // Right
-        new Vector2Int(1, 1),  // Right-Up
-        new Vector2Int(0, 1),  // Up
-        new Vector2Int(-1, 1), // Left-Up
-        new Vector2Int(-1, 0), // Left
-        new Vector2Int(-1, -1),// Left-Down
-        new Vector2Int(0, -1), // Down
-        new Vector2Int(1, -1)  // Right-Down
-    };
-
-    public static List<Vector2Int> directions_4 = new List<Vector2Int>()
-    {
-        new Vector2Int(1, 0),  // Right
-        new Vector2Int(0, 1),  // Up
-        new Vector2Int(-1, 0), // Left
-        new Vector2Int(0, -1)  // Down
-    };
-
-    public enum Dirs_8
-    {
-        Right = 0,
-        RightUp = 1,
-        Up = 2,
-        LeftUp = 3,
-        Left = 4,
-        LeftDown = 5,
-        Down = 6,
-        RightDown = 7,
-        None = -1
-    }
-
-    public enum Dirs_4
-    {
-        Right = 0,
-        Up = 1,
-        Left = 2,
-        Down = 3,
-        None = -1
-    }
-
-    /// <summary>
-    /// Get the directions of a vector.
-    /// </summary>
-    /// <param name="dir">The vector to analyze.</param>
-    /// <returns>
-    /// <list type="bullet">
-    /// <item><description><b>First</b> goes the horizontal directions.</description></item>
-    /// <item><description><b>Second</b> goes the vertical directions.</description></item>
-    /// <item><description><b>If</b> the vector is <b>zero</b>, returns none.</description></item>
-    /// </list>
-    /// </returns>
-    public static List<Dirs_4> GetDirs(Vector2 dir)
-    {
-        var toR = new List<Dirs_4>();
-        if (dir.x > 0)
-        {
-            toR.Add(Dirs_4.Right);
-        }
-        else if (dir.x < 0)
-        {
-            toR.Add(Dirs_4.Left);
-        }
-        else
-        {
-            toR.Add(Dirs_4.None);
-        }
-
-        if (dir.y > 0)
-        {
-            toR.Add(Dirs_4.Up);
-        }
-        else if (dir.y < 0)
-        {
-            toR.Add(Dirs_4.Down);
-        }
-        else
-        {
-            toR.Add(Dirs_4.None);
-        }
-
-        return toR;
-    }
-
-}
-
-public static class Utils
-{
-    public static int BitArrayToInt(BitArray bits)
-    {
-        if (bits.Length != 8)
-            throw new ArgumentException("El BitArray debe tener exactamente 8 bits.");
-
-        byte[] bytes = new byte[1];
-        bits.CopyTo(bytes, 0);
-        return bytes[0];
-    }
-
-    public static BitArray IntToBitArray(int number)
-    {
-        return new BitArray(new[] { number });
-    }
-
-    public static void GenerateImage(Map map, string fileName, string path)
-    {
-        var colors = new Dictionary<int, Color>();
-
-        var t = new Texture2D(map.Width, map.Height);
-        for (int i = 0; i < map.Width; i++)
-        {
-            for (int j = 0; j < map.Height; j++)
-            {
-                var c = map.Data[i,j].roomID;
-
-                if (!colors.ContainsKey(c))
-                {
-                    colors.Add(c, new Color(Random.Range(0, 1f), Random.Range(0, 1f), Random.Range(0, 1f)));
-                    t.SetPixel(i, j, colors[c]);
-                }
-                t.SetPixel(i, j, colors[c]);
-            }
-        }
-
-        byte[] pngData = t.EncodeToPNG();
-        string filePath = Path.Combine(path, fileName);
-        File.WriteAllBytes(filePath, pngData);
-
-        Debug.Log("Textura guardada como " + fileName + " en la ruta: " + filePath);
-    }
-
-    // FIX?: Esto se podria hacer de otra forma pa que sea menos ciclos.
-    public static List<Vector2Int> GetNeigborPositions(List<Vector2Int> pos, List<Vector2Int> dirs)
-    {
-        var toR = new List<Vector2Int>();
-        toR.AddRange(pos);
-
-        for (int i = 0; i < pos.Count; i++)
-        {
-            for (int j = 0; j < dirs.Count; j++)
-            {
-                var n = pos[i] + dirs[j];
-                if (!toR.Contains(n))
-                    toR.Add(n);
-            }
-        }
-        return toR;
-    }
-}
-
 public class TEST_1 : MonoBehaviour
 {
     public List<int> InternalCorners = new List<int>();
     public List<int> ExternalCorners = new List<int>();
+
+    public NumbersSet numbersSet = new NumbersSet();
 
     void Start()
     {
@@ -177,9 +27,9 @@ public class TEST_1 : MonoBehaviour
         Utils.GenerateImage(pointMap,"Constructive_Point_Map.png", Application.dataPath);
 
         // Smart Constructive
-        var smartMap = SmartConstructive(graph);
-        smartMap.Print();
-        Utils.GenerateImage(pointMap, "Constructive_Smart_Map.png", Application.dataPath);
+        //var smartMap = SmartConstructive(graph);
+        //smartMap.Print();
+        //Utils.GenerateImage(pointMap, "Constructive_Smart_Map.png", Application.dataPath);
 
         // Hill Climbing
         // var hillClimbing = new HillClimbing();
@@ -229,16 +79,39 @@ public class TEST_1 : MonoBehaviour
 
     public float VoidEvaluator(Map map)
     {
-        return 0; // TODO: Implement
+        var boundArea = map.Width + map.Height;
+        var voidArea = boundArea - map.Area;
+
+        return 1 - (voidArea / boundArea);
     }
 
     public float ExteriorWallEvaluator(Map map)
     {
-        return 0; // TODO: Implement
+        var n = 0;
+        var min = 2f * (map.Width + map.Height);
+        var max = 2f * min;
+
+        foreach (var r in map.rooms)
+        {
+            foreach (var t in r.Value)
+            {
+                n += t.Value.numWall;
+            }
+        }
+
+        return 1 - ((n - min) / (max - min));
     }
 
     public float CornerEvaluator(Map map)
     {
+        foreach (var r in map.rooms)
+        {
+            foreach (var t in r.Value)
+            {
+                var tile = t.Value;
+                tile.neigCount;
+            }
+        }
         return 0; // TODO: Implement
     }
 
@@ -254,38 +127,18 @@ public class TEST_1 : MonoBehaviour
     /// <returns></returns>
     public Map PointConstructive(Graph graph)
     {
-        // Init size map
-        int maxX = int.MaxValue, maxY = int.MaxValue;
-        int minX = int.MinValue, minY = int.MinValue;
+        var map = new Map();
+
+        var i = 0;
         foreach (var node in graph.nodes)
         {
-            if (node.pos.x + (node.maxArea.x/2f) > maxX)
-                maxX = (int)node.pos.x;
-            if (node.pos.y + (node.maxArea.y/2f) > maxY)
-                maxY = (int)node.pos.y;
-            if (node.pos.x - (node.maxArea.x/2f) < minX)
-                minX = (int)node.pos.x;
-            if (node.pos.y - (node.maxArea.y/2f) < minY)
-                minY = (int)node.pos.y;
-        }
-        var w = maxX - minX;
-        var h = maxY - minY;
-        var offset = new Vector2(minX, minY);
-        var map = new Map(w, h, 2);
-
-        // paint Tiles
-        for (int i = 0; i < graph.nodes.Count; i++)
-        {
-            var node = graph.nodes[i];
-            var pos = node.pos - offset;
-
-            map.SetRoomTiles(new List<Vector2Int>() { new Vector2Int((int)pos.x, (int)pos.y) }, i+1);
+            map.SetRoomTiles(new List<Vector2Int>() { new Vector2Int((int)node.pos.x, (int)node.pos.y) }, i);
+            i++;
         }
 
         return map;
     }
 
-    // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
     /// <summary>
     /// Get a map with the rooms painted.
     /// This start with the room with more connections and try to connect with the others.
@@ -295,6 +148,9 @@ public class TEST_1 : MonoBehaviour
     /// <returns></returns>
     public Map SmartConstructive(Graph graph) // FIX?: esto podria recivir una func para sacar max, min, rand, avrg de (w,h) inicial.
     {
+        throw new NotImplementedException();
+
+        /*
         var added = new List<Graph.Node>();
 
         // Init
@@ -351,71 +207,7 @@ public class TEST_1 : MonoBehaviour
             }
             i++;
         }
-
         return map;
-    }
-
-
-
-
-}
-
-public class Graph
-{
-    public struct Node
-    {
-        public Vector2 pos;
-        public Vector2 minArea;
-        public Vector2 maxArea;
-        public Color c;
-    }
-
-    public struct Edge
-    {
-        public Node n1, n2;
-    }
-
-    public List<Node> nodes = new List<Node>();
-    public List<Edge> edges = new List<Edge>();
-
-    public Node GetMaxConection()
-    {
-        var dict = new Dictionary<Node, int>();
-
-        foreach (var edge in edges)
-        {
-            if(dict.ContainsKey(edge.n1))
-            {
-                dict[edge.n1]++;
-            }
-            else
-            {
-                dict.Add(edge.n1, 1);
-            }
-
-            if (dict.ContainsKey(edge.n2))
-            {
-                dict[edge.n2]++;
-            }
-            else
-            {
-                dict.Add(edge.n2, 1);
-            }
-        }
-
-        return dict.OrderByDescending(x => x.Value).First().Key;
-    }
-
-    public List<Node> GetNeighbors(Node node)
-    {
-        var neighbors = new List<Node>();
-        foreach (var edge in edges)
-        {
-            if (edge.n1.Equals(node))
-                neighbors.Add(edge.n2);
-            if (edge.n2.Equals(node))
-                neighbors.Add(edge.n1);
-        }
-        return neighbors;
+        */
     }
 }
