@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public static class Directions
 {
@@ -88,4 +89,23 @@ public static class Directions
 
         return toR;
     }
+
+    public static List<Vector2Int> EnumToVector(List<Dirs_4> dir)
+    {
+        var toR = new List<Vector2Int>();
+        foreach (var d in dir)
+        {
+            if (d == Dirs_4.None)
+            {
+                toR.Add(Vector2Int.zero);
+                continue;
+            }
+
+            var v = directions_4[(int)d];
+            toR.Add(v);
+        }
+
+        return toR;
+    }
+
 }

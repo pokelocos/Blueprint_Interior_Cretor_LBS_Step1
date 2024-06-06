@@ -5,23 +5,42 @@ using UnityEngine;
 
 public class NumbersSet
 {
+    private static NumbersSet instance = new NumbersSet();
+    public static NumbersSet Instance {
+        get => instance ?? new NumbersSet();
+    }
+
     public Dictionary<int, List<string>> dict = new Dictionary<int, List<string>>();
     public Dictionary<string, List<int>> dictKeys;
+    public Dictionary<string, List<int>> extraKeys = new() // parche
+    {
+        {"Corner", new List<int>()},
+        {"Convex", new List<int>()},
+        {"Concave", new List<int>()},
+        {"Wall", new List<int>()}
+    };
 
+    // [R(1,0),RU(1,1),U(0,1),LU(-1,1),L(-1,0),LD(-1,-1),D(0,-1),RD(1,-1)]
+    // [R    ,RU   ,U    ,LU    ,L     ,LD     ,D     ,RD    ]
+    // [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)]
     private (string, string)[] words = new (string, string)[]
     {
         ("101xxxxx","Concave Corner RU"),
         ("xx101xxx","Concave Corner RD"),
-        ("1xxxxx10","Concave Corner LD"),
         ("xxxx101x","Concave Corner LU"),
+        ("1xxxxx10","Concave Corner LD"),
         ("000xxxxx","Convex Corner RU"),
         ("xx000xxx","Convex Corner RD"),
-        ("0xxxxx00","Convex Corner LD"),
         ("xxxx000x","Convex Corner LU"),
-        ("0xxxxxxx", "Wall Rigth"),
+        ("0xxxxx00","Convex Corner LD"),
+        ("0xxxxxxx", "Wall Right"),
         ("xx0xxxxx", "Wall Up"),
         ("xxxx0xxx", "Wall Left"),
         ("xxxxxx0x", "Wall Down"),
+        ("10001xxx", "Common Wall Right"),
+        ("xx0xxxxx", "Common Wall Up"),
+        ("xxxx0xxx", "Common Wall Left"),
+        ("xxxxxx0x", "Common Wall Down"),
     };
 
     public NumbersSet()
@@ -36,6 +55,19 @@ public class NumbersSet
 
         dictKeys = InvertDictionary(dict);
 
+        // parche para encontrar los concaves, convexos, esquinas y paredes
+        foreach (var (key,value) in dictKeys)
+        {
+            foreach (var (word, values) in extraKeys)
+            {
+                if(key.Contains(word))
+                    extraKeys[word].AddRange(value);
+            }
+        }
+    }
+
+    public void Show()
+    {
         foreach (var item in dictKeys)
         {
             var msg = "Word: " + item.Key + "\n";
@@ -119,14 +151,29 @@ public class NumbersSet
         }
         return all;
     }
-}
 
-public static class Vector2Extension
-{
-    public static float MinAbs(this Vector2 v)
+    public static bool IsConvexCorner(int value) 
     {
-        return (Mathf.Abs(v.x) < Mathf.Abs(v.y))? v.x : v.y;
+        var numbers = NumbersSet.Instance;
+        numbers.extraKeys.TryGetValue("Convex", out var values);
+        return values.Contains(value);
+        //return ((value != 0) && (value % 3 == 0 || value == 7 || value == 11 || value == 13 || value == 14 || value == 0)); // FIX: Esto deberia usar el sistema de conjuntos por palabras
     }
 
+    public static bool IsConcaveCorner(int value) 
+    {
+        var numbers = NumbersSet.Instance;
+        numbers.extraKeys.TryGetValue("Concave", out var values);
+        return values.Contains(value);
+        //return (value == 0 || value == 1 || value == 2 || value == 4 || value == 8); // FIX: Esto deberia usar el sistema de conjuntos por palabras
+    }
 
+    public static bool IsWall(int value)
+    {
+        var numbers = NumbersSet.Instance;
+        numbers.extraKeys.TryGetValue("Wall", out var values);
+        return values.Contains(value);
+        //return (value == 1 || value == 2 || value == 4 || value == 8); // FIX: Esto deberia usar el sistema de conjuntos por palabras
+    }
 }
+

@@ -1,42 +1,41 @@
+using Optimization.Evaluators;
+using Optimization.Neigbors;
+using Optimization.Terminators;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.PlasticSCM.Editor.WebApi;
 using UnityEngine;
 
 public class SimulatedAnnealing
 {
-    private float currentTemp;
-    private float coolingRate;
+    private float currentTemp = 1000;
+    private float coolingRate = 0.1f;
 
-    private Func<List<Map>,List<Map>> Selector;
-    private Func<Map,float> Evaluate; // normalizado
-    private Func<bool> Terminator;
-    
-    public Map Ejecute(Map init, float temp,Func<Map,float> evaluator,Func<List<Map>,List<Map>> selector)
+    public Map Execute(Map init, float temp,IEvaluator evaluator,ITerminator terminator,IGetNeighbors GetNeighbors)
     {
         // Init
         Map best = init;
         currentTemp = temp;
-        Evaluate = evaluator;
-        Selector = selector;
 
         // Algorithm
-        var fitness = Evaluate.Invoke(best);
+        var fitness = evaluator.Execute(best);
         while (currentTemp > 1)
         {
-            var neighbor = GetNeighbors(best);
-            var selected = Selector.Invoke(neighbor);
+            var selected = GetNeighbors.Execute(best)
+                .Select(n => (n.Item1 as Map, n.Item2))
+                .ToList(); // OPTIMIZE:.toList()!
 
             for (int i = 0; i < selected.Count; i++)
             {
-                if (Terminator.Invoke())
+                if (terminator?.Execute() ?? false)
                 {
                     return best;
                 }
 
-                var neig = selected[i];
-                var newFitness = Evaluate.Invoke(neig);
+                var (neig, move) = selected[i];
+                var newFitness = evaluator.Execute(neig);
 
                 var diff = newFitness - fitness;
 
@@ -61,10 +60,4 @@ public class SimulatedAnnealing
 
         return best;
     }
-
-    public List<Map> GetNeighbors(Map map)
-    {
-        return new List<Map>(); // TODO: Implement
-    }
-
 }

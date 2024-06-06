@@ -6,44 +6,152 @@ using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class TEST_1 : MonoBehaviour
+namespace Optimization.Terminators
 {
-    public List<int> InternalCorners = new List<int>();
-    public List<int> ExternalCorners = new List<int>();
-
-    public NumbersSet numbersSet = new NumbersSet();
-
-    void Start()
+    public interface ITerminator
     {
-        // init Seed
-        UnityEngine.Random.InitState(117);
-
-        //Create Graph
-        var graph = SimpleGraph();
-
-        // Point Constructive
-        var pointMap = PointConstructive(graph);
-        pointMap.Print();
-        Utils.GenerateImage(pointMap,"Constructive_Point_Map.png", Application.dataPath);
-
-        // Smart Constructive
-        //var smartMap = SmartConstructive(graph);
-        //smartMap.Print();
-        //Utils.GenerateImage(pointMap, "Constructive_Smart_Map.png", Application.dataPath);
-
-        // Hill Climbing
-        // var hillClimbing = new HillClimbing();
-
-        // Simulated Annealing
-        var simulatedAnnealing = new SimulatedAnnealing();
-        simulatedAnnealing.Ejecute(pointMap, 1000f, (x) => 0, (x) => new List<Map>());
-
-        // Tabu Search
-        var tabuSearch = new TabuSearch();
-        
+        public bool Execute();
     }
 
-    public Graph SimpleGraph()
+    public class AgregateTermination : ITerminator
+    {
+        public ITerminator[] terminators;
+
+        public bool Execute()
+        {
+            foreach (var t in terminators)
+            {
+                if (t.Execute())
+                    return true;
+            }
+            return false;
+        }
+    }
+
+    public class IterationTerminator : ITerminator
+    {
+        public int maxIterations;
+        private int currentIteration = 0;
+
+        public bool Execute()
+        {
+            currentIteration++;
+            return currentIteration >= maxIterations;
+        }
+    }
+
+    public class ManualTerminator : ITerminator
+    {
+        public bool Execute()
+        {
+            return Event.current.keyCode == KeyCode.Escape;
+            //return Input.GetKeyDown(KeyCode.Escape);
+        }
+    }
+
+    public class TimeTerminator : ITerminator
+    {
+        private float maxTime;
+        private float startTime;
+
+        public bool Execute()
+        {
+            return Time.time - startTime >= maxTime;
+        }
+    }
+}
+
+namespace Optimization.Evaluators
+{
+    public interface IEvaluator
+    {
+        public float Execute(object obj);
+    }
+
+    public class WeightedAgregateEvaluator : IEvaluator
+    {
+        public (IEvaluator, float)[] evs;
+
+        public float Execute(object obj)
+        {
+            if (evs == null || evs.Length == 0) { Debug.LogWarning("No Tiene Sub-Evalaudores."); return -1; }
+
+            var map = (Map)obj;
+
+            var total = 0f;
+            foreach (var e in evs)
+            {
+                var (evaluator, weight) = e;
+                var value = evaluator.Execute(map);
+                total += value * weight;
+            }
+            return total;
+        }
+    }
+
+    public class VoidEvaluator : IEvaluator
+    {
+        public float Execute(object obj) // CORRECT
+        {
+            var map = (Map)obj;
+
+            float boundArea = map.Width + map.Height;
+            float voidArea = boundArea - map.Area;
+
+            return 1f - (voidArea / boundArea);
+        }
+    }
+
+    public class ExteriorWallEvaluator : IEvaluator 
+    {
+        public float Execute(object obj)
+        {
+            var map = (Map)obj;
+
+            var n = 0;
+            float min = 2f * (map.Width + map.Height); // circumference
+            float max = 2f * min;
+
+            foreach (var r in map.rooms)
+            {
+                foreach (var (pos, tile) in r.Value)
+                {
+                    n += map.WallsValue(pos.x, pos.y); // FIX: no esta sumando nada a n
+                }
+            }
+
+            return 1f - (n / max);
+            //return 1f - ((n - min) / (max - min)); // FIX: si n es menor que min, el resutlado mas que 1
+        }
+    }
+
+    public class CornerEvaluator : IEvaluator 
+    {
+        public float Execute(object obj)
+        {
+            var map = (Map)obj;
+
+            var n = 0;
+            float min = 4 * map.rooms.Count;
+            float max = map.Height * map.Width;
+
+            foreach (var (id,room) in map.rooms)
+            {
+                var c = map.GetConcaveCorners(id); // FIX?: no esta encontrando esquinas en el mapa de points
+                c.AddRange(map.GetConvexCorners(id)); // FIX?: no esta encontrando esquinas en el mapa de points
+
+                n += c.Count;
+            }
+
+            return 1 - (n / max);
+            //return 1 - ((n - min) / (max - min)); // FIX: si n es menor que min, el resutlado mas que 1
+        }
+    }
+}
+
+public class TestUtils 
+{
+    public static Graph ExampleGraph()
     {
         var graph = new Graph();
         graph.nodes.Add(new Graph.Node() {
@@ -77,59 +185,16 @@ public class TEST_1 : MonoBehaviour
         return graph;
     }
 
-    public float VoidEvaluator(Map map)
-    {
-        var boundArea = map.Width + map.Height;
-        var voidArea = boundArea - map.Area;
-
-        return 1 - (voidArea / boundArea);
-    }
-
-    public float ExteriorWallEvaluator(Map map)
-    {
-        var n = 0;
-        var min = 2f * (map.Width + map.Height);
-        var max = 2f * min;
-
-        foreach (var r in map.rooms)
-        {
-            foreach (var t in r.Value)
-            {
-                n += t.Value.numWall;
-            }
-        }
-
-        return 1 - ((n - min) / (max - min));
-    }
-
-    public float CornerEvaluator(Map map)
-    {
-        foreach (var r in map.rooms)
-        {
-            foreach (var t in r.Value)
-            {
-                var tile = t.Value;
-                tile.neigCount;
-            }
-        }
-        return 0; // TODO: Implement
-    }
-
-    public List<Map> GetNeighbors(Map map)
-    {
-        return new List<Map>(); // TODO: Implement
-    }
-
     /// <summary>
     /// Get a map with the rooms painted as 1 point each.
     /// </summary>
     /// <param name="graph"></param>
     /// <returns></returns>
-    public Map PointConstructive(Graph graph)
+    public static Map PointConstructive(Graph graph)
     {
         var map = new Map();
 
-        var i = 0;
+        var i = 1; // 0 is for empty tiles
         foreach (var node in graph.nodes)
         {
             map.SetRoomTiles(new List<Vector2Int>() { new Vector2Int((int)node.pos.x, (int)node.pos.y) }, i);

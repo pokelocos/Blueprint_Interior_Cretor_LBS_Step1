@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -25,14 +26,15 @@ public static class Utils
     public static void GenerateImage(Map map, string fileName, string path)
     {
         var colors = new Dictionary<int, Color>();
+        colors.Add(0, Color.white);
 
-        var (mtx, w, h) = map.ToTileMatrix();
-        var t = new Texture2D(map.Width, map.Height);
-        for (int i = 0; i < map.Width; i++)
+        var ((cords, rooms, tiles), w, h) = map.ToTileMatrix();
+        var t = new Texture2D(w, h);
+        for (int i = 0; i < w; i++)
         {
-            for (int j = 0; j < map.Height; j++)
+            for (int j = 0; j < h; j++)
             {
-                var c = mtx[i, j].roomID;
+                var c = rooms[i, j];
 
                 if (!colors.ContainsKey(c))
                 {
@@ -51,6 +53,7 @@ public static class Utils
     }
 
     // FIX?: Esto se podria hacer de otra forma pa que sea menos ciclos.
+    [Obsolete]
     public static List<Vector2Int> GetNeigborPositions(List<Vector2Int> pos, List<Vector2Int> dirs)
     {
         var toR = new List<Vector2Int>();
@@ -67,4 +70,34 @@ public static class Utils
         }
         return toR;
     }
+
+    public static T RandomRullete<T>(this List<T> list, Func<T, float> predicate)
+    {
+        if (list.Count <= 0)
+        {
+            return default(T);
+        }
+
+        var pairs = new List<Tuple<T, float>>();
+        for (int i = 0; i < list.Count(); i++)
+        {
+            var value = predicate(list[i]);
+            pairs.Add(new Tuple<T, float>(list[i], value));
+        }
+
+        var total = pairs.Sum(p => p.Item2);
+        var rand = Random.Range(0.0f, total);
+
+        var cur = 0f;
+        for (int i = 0; i < pairs.Count; i++)
+        {
+            cur += pairs[i].Item2;
+            if (rand <= cur)
+            {
+                return pairs[i].Item1;
+            }
+        }
+        return default(T);
+    }
+
 }

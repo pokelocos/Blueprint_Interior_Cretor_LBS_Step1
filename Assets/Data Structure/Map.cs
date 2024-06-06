@@ -1,33 +1,32 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting.FullSerializer;
+using UnityEditor;
 using UnityEngine;
 
 public class Tile : ICloneable
 {
+    public Map owner;
     public int roomID = -1;
-    public int neigCount = -1;
-    public int numWall = -1;
 
     #region Constructors
-    public Tile()
+    public Tile(Map owner)
     {
         this.roomID = -1;
-        this.neigCount = -1;
-        this.numWall = -1;
+        this.owner = owner;
     }
 
-    public object Clone()
+    public object Clone() // TODO: Impelentar el sistema de diccionario que permite clonar referencias.
     {
-        return new Tile()
+        return new Tile(null)
         {
             roomID = this.roomID,
-            neigCount = this.neigCount,
-            numWall = this.numWall
         };
     }
     #endregion
+
 }
 
 public class Map : ICloneable
@@ -60,7 +59,7 @@ public class Map : ICloneable
         }
     }
 
-    public int Width{
+    public int Width {
         get {
             var min = int.MaxValue;
             var max = int.MinValue;
@@ -69,14 +68,14 @@ public class Map : ICloneable
             {
                 foreach (var t in r.Value)
                 {
-                    if(t.Key.x < min)
+                    if (t.Key.x < min)
                         min = t.Key.x;
-                    if(t.Key.x > max)
+                    if (t.Key.x > max)
                         max = t.Key.x;
                 }
 
             }
-            return max - min;
+            return (max - min) + 1;
         }
     }
 
@@ -90,14 +89,14 @@ public class Map : ICloneable
             {
                 foreach (var t in r.Value)
                 {
-                    if(t.Key.y < min)
+                    if (t.Key.y < min)
                         min = t.Key.y;
-                    if(t.Key.y > max)
+                    if (t.Key.y > max)
                         max = t.Key.y;
                 }
 
             }
-            return max - min;
+            return (max - min) + 1;
         }
     }
 
@@ -144,7 +143,7 @@ public class Map : ICloneable
     #region Constructors
     public Map()
     {
-        
+
     }
 
     public object Clone()
@@ -156,7 +155,9 @@ public class Map : ICloneable
             var room = new Dictionary<Vector2Int, Tile>();
             foreach (var t in r.Value)
             {
-                room.Add(t.Key, t.Value.Clone() as Tile);
+                var nTile = t.Value.Clone() as Tile;
+                nTile.owner = map;
+                room.Add(t.Key, nTile);
             }
             map.rooms.Add(r.Key, room);
         }
@@ -194,7 +195,7 @@ public class Map : ICloneable
 
             if (tile == null)
             {
-                tile = new Tile();
+                tile = new Tile(this);
                 tile.roomID = roomID;
 
                 if (!rooms.ContainsKey(roomID))
@@ -213,24 +214,226 @@ public class Map : ICloneable
                 rooms[roomID].Add(new Vector2Int(x, y), tile);
             }
         }
+    }
 
-        // recalcualte neig value and wall value
-        var dirs = Utils.GetNeigborPositions(positions, Directions.directions_8);
-        for (int i = 0; i < dirs.Count; i++)
+    /// <summary>
+    /// Retrieves a list of walls comprising a room's perimeter, 
+    /// each represented by points and their facing direction.
+    /// </summary>
+    /// <param name="roomID">The room identifier.</param>
+    /// <returns>A list of wall points and their facing direction.</returns>
+    public List<(Vector2Int[],Vector2Int)> GetWalls(int roomID)
+    {
+        var r = rooms[roomID];
+        var walls = new List<(Vector2Int[],Vector2Int)>();
+        var horizontal = GetHorizontalWalls(roomID);
+        var vertical = GetVerticalWalls(roomID);
+        walls.AddRange(horizontal);
+        walls.AddRange(vertical);
+        return walls;
+    }
+
+    /// <summary>
+    /// Get a list of points that form the wall and the direction of the wall.
+    /// </summary>
+    /// <param name="roomID"></param>
+    /// <returns></returns>
+    internal List<Vector2Int> GetCorners(int roomID)
+    {
+        var corners = GetConcaveCorners(roomID);
+        corners.AddRange(GetConvexCorners(roomID));
+        return corners;
+    }
+
+    /// <summary>
+    /// Retrieves a list of convex corners within a specified room.
+    /// </summary>
+    /// <param name="roomID">The identifier of the room.</param>
+    /// <returns>A list of Vector2Int representing convex corners positions.</returns>
+    internal List<Vector2Int> GetConvexCorners(int roomID)
+    {
+        var pairs = rooms[roomID];
+        var corners = new List<Vector2Int>();
+        foreach (var (pos, tile) in pairs)
         {
-            var x = dirs[i].x;
-            var y = dirs[i].y;
+            var value = NeigthborValue(pos.x,pos.y);
 
-            foreach (var r in rooms)
+            if (NumbersSet.IsConvexCorner(value))
             {
-                var pos = new Vector2Int(x, y);
-                if (r.Value.ContainsKey(pos))
+                corners.Add(pos);
+            }
+        }
+        return corners;
+    }
+
+    /// <summary>
+    /// Retrieves a list of concave corners within a specified room.
+    /// </summary>
+    /// <param name="roomID">The identifier of the room.</param>
+    /// <returns>A list of Vector2Int representing convex corners positions.</returns>
+    internal List<Vector2Int> GetConcaveCorners(int roomID)
+    {
+        var pairs = rooms[roomID];
+        var corners = new List<Vector2Int>();
+
+        foreach (var p in pairs)
+        {
+            var (pos, tile) = p;
+            var value = NeigthborValue(pos.x, pos.y);
+
+            if (!NumbersSet.IsConcaveCorner(value))
+                continue;
+
+            var dirs = Directions.directions_4;
+            for (int i = 0; i < dirs.Count; i++)
+            {
+                var oPos = pos + dirs[i];
+
+                pairs.TryGetValue(oPos, out var other);
+
+                if (other == null)
+                    continue;
+
+                var oValue = NeigthborValue(oPos.x, oPos.y);
+
+                if (NumbersSet.IsWall(oValue))
                 {
-                    r.Value[pos].neigCount = CalcNeigthbors(x, y);
-                    r.Value[pos].numWall = CalcWalls(x, y);
+                    corners.Add(oPos);
                 }
             }
         }
+        return corners;
+    }
+
+    /// <summary>
+    /// Get a list of points that form the wall and the direction of the wall.
+    /// </summary>
+    /// <param name="roomID"></param>
+    /// <returns></returns>
+    private List<(Vector2Int[],Vector2Int)> GetVerticalWalls(int roomID)
+    {
+        var room = rooms[roomID];
+        var walls = new List<(Vector2Int[],Vector2Int)>();
+
+        var convexCorners = GetConvexCorners(roomID);
+        var allCorners = GetConcaveCorners(roomID);
+        allCorners.AddRange(convexCorners);
+
+        foreach (var current in convexCorners)
+        {
+            Vector2Int? other = null;
+            int lessDist = int.MaxValue;
+            foreach (var candidate in allCorners)
+            {
+                if (current == candidate)
+                    continue;
+
+                if (current.x - candidate.x != 0) // Comprobación para pared vertical
+                    continue;
+
+                var dist = Mathf.Abs(current.y - candidate.y);
+                if (dist < lessDist)
+                {
+                    lessDist = dist;
+                    other = candidate;
+                }
+            }
+
+            if (other == null)
+                other = current;
+
+            if (walls.Any(w => (w.Item1.First() == other) && (w.Item1.Last() == current))) // Unnecessary?
+                continue;
+
+            var wallTiles = new List<Vector2Int>();
+            var end = Mathf.Max(current.y, other?.y ?? 0);
+            var start = Mathf.Min(current.y, other?.y ?? 0);
+
+            for (int i = 0; i <= end - start; i++)
+            {
+                wallTiles.Add(new Vector2Int(current.x, start + i)); 
+            }
+
+            bool toRight = true;
+            for (int i = 0; i < wallTiles.Count; i++)
+            {
+                var n = wallTiles[i] + Vector2Int.right;
+                if (room.ContainsKey(n))
+                {
+                    toRight = false;
+                    break;
+                }
+            }
+
+            var dir = (toRight) ? Vector2Int.right : Vector2Int.left; // Cambiado para muro vertical
+            walls.Add((wallTiles.ToArray(), dir));
+        }
+        return walls;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="roomID"></param>
+    /// <returns></returns>
+    private List<(Vector2Int[],Vector2Int)> GetHorizontalWalls(int roomID)
+    {
+        var room = rooms[roomID];
+        var walls = new List<(Vector2Int[],Vector2Int)>();
+
+        var convexCorners = GetConvexCorners(roomID);
+        var allCorners = GetConcaveCorners(roomID);
+        allCorners.AddRange(convexCorners);
+
+        foreach (var current in convexCorners)
+        {
+            Vector2Int? other = null;
+            int lessDist = int.MaxValue;
+            foreach (var candidate in allCorners)
+            {
+                if (current == candidate)
+                    continue;
+
+                if (current.y - current.y != 0)
+                    continue;
+
+                var dist = Mathf.Abs(current.x - candidate.x);
+                if (dist < lessDist)
+                {
+                    lessDist = dist;
+                    other = candidate;
+                }
+            }
+
+            if (other == null)
+                other = current;
+
+            if (walls.Any(w => (w.Item1.First() == other) && (w.Item1.Last() == current))) // UNESESARY?
+                continue;
+
+            var wallTiles = new List<Vector2Int>();
+            var end = Mathf.Max(current.x,  other?.x ?? 00);
+            var start = Mathf.Min(current.x, other?.x ?? 00);
+            for (int i = 0; i <= end - start; i++)
+            {
+                wallTiles.Add(new Vector2Int(start + i, current.y));
+            }
+
+            bool toUp = true;
+            for (int i = 0; i < wallTiles.Count; i++)
+            {
+                var n = wallTiles[i] + Vector2Int.up;
+                if(room.ContainsKey(n))
+                {
+                    toUp = false;
+                    break;
+                }
+            }
+
+            var dir = (toUp) ? Vector2Int.up : Vector2Int.down;
+           walls.Add((wallTiles.ToArray(),dir));
+        }
+        return walls;
     }
 
     /// <summary>
@@ -259,7 +462,7 @@ public class Map : ICloneable
     /// <param name="x"></param>
     /// <param name="y"></param>
     /// <returns></returns>
-    private int CalcNeigthbors(int x, int y)
+    public int NeigthborValue(int x, int y)
     {
         var bitArray = new BitArray(8);
         for (int i = 0; i < Directions.directions_8.Count; i++)
@@ -287,7 +490,7 @@ public class Map : ICloneable
     /// <param name="x"></param>
     /// <param name="y"></param>
     /// <returns></returns>
-    private int CalcWalls(int x, int y)
+    public int WallsValue(int x, int y)
     {
         var toR = 0;
         for (int i = 0; i < Directions.directions_4.Count; i++)
@@ -319,19 +522,43 @@ public class Map : ICloneable
     /// <item><description><b>Height:</b> The height of the matrix, which is the number of rows in the tile matrix.</description></item>
     /// </list>
     /// </returns>
-    public (Tile[,],int,int) ToTileMatrix()
+    public ((Vector2Int[,], int[,], Tile[,]), int, int) ToTileMatrix()
     {
-        var rect = Bounds;  
-        var tiles = new Tile[rect.width, rect.height];
+        var rect = Bounds;
+        var tiles = new Tile[rect.width + 1, rect.height + 1];
+        var cords = new Vector2Int[rect.width + 1, rect.height + 1];
+        var roomID = new int[rect.width + 1, rect.height + 1];
 
         foreach (var r in rooms)
         {
             foreach (var t in r.Value)
             {
-                tiles[t.Key.x,t.Key.y] = t.Value;
+                var pivot = t.Key - rect.min;
+                tiles[pivot.x, pivot.y] = t.Value;
+                cords[pivot.x, pivot.y] = t.Key;
+                roomID[pivot.x, pivot.y] = r.Key;
             }
         }
-        return (tiles,rect.width,rect.height);
+        return ((cords, roomID, tiles), rect.width + 1, rect.height + 1);
+    }
+
+    public (List<Vector2Int>, List<Tile>) GetNeigTiles(Vector2Int pos, List<Vector2Int> dirs)
+    {
+        var posR = new List<Vector2Int>();
+        var tilesR = new List<Tile>();
+
+        foreach (var d in dirs)
+        {
+            var dd = pos + d;
+
+            foreach (var r in rooms)
+            {
+                posR.Add(dd);
+                tilesR.Add(r.Value.ContainsKey(dd) ? r.Value[dd]: null);
+            }
+        }
+
+        return (posR, tilesR);
     }
 
 
@@ -340,20 +567,18 @@ public class Map : ICloneable
     /// </summary>
     public void Print()
     {
-        var (tiles, w, h) = ToTileMatrix();
+        var ((cords,rooms,tiles), w, h) = ToTileMatrix();
 
+        var msg = "\n";
         for (int i = 0; i < w; i++)
         {
             for (int j = 0; j < h; j++)
             {
-                var msg = "[" + i + "," + j + "] = " +
-                    "ID: " + tiles[i, j].roomID + ", " +
-                    "Neig: " + tiles[i, j].neigCount + ", " +
-                    "Walls: " + tiles[i, j].numWall;
-
-                Debug.Log(msg);
+                msg += rooms[i, j] + ", ";
             }
+            msg += "\n";
         }
+        Debug.Log(msg);
     }
     #endregion
 }
