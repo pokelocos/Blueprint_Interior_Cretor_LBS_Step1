@@ -222,7 +222,8 @@ public class Map : ICloneable
     /// </summary>
     /// <param name="roomID">The room identifier.</param>
     /// <returns>A list of wall points and their facing direction.</returns>
-    public List<(Vector2Int[],Vector2Int)> GetWalls(int roomID)
+    /*
+    public List<(Vector2Int[], Vector2Int)> GetWalls(int roomID)
     {
         var r = rooms[roomID];
         var walls = new List<(Vector2Int[],Vector2Int)>();
@@ -232,17 +233,97 @@ public class Map : ICloneable
         walls.AddRange(vertical);
         return walls;
     }
+    */
 
-    /// <summary>
-    /// Get a list of points that form the wall and the direction of the wall.
-    /// </summary>
-    /// <param name="roomID"></param>
-    /// <returns></returns>
-    internal List<Vector2Int> GetCorners(int roomID)
+    public List<(Vector2Int[], Vector2Int)> GetWalls(int roomID)
     {
-        var corners = GetConcaveCorners(roomID);
-        corners.AddRange(GetConvexCorners(roomID));
-        return corners;
+        var toR = new List<(Vector2Int[], Vector2Int)>();
+        var candidates = new Dictionary<(Vector2Int, Directions.Dirs_4), Vector2Int>();
+
+        var concave = GetConcaveCorners(roomID);
+        var convex = GetConvexCorners(roomID);
+        var corners = new List<Vector2Int>();
+        corners.AddRange(concave);
+        corners.AddRange(convex);
+
+        for (int i = 0; i < corners.Count(); i++)
+        {
+            var p1 = corners[i];
+            for (int j = 0; j < corners.Count(); j++)
+            {
+                var p2 = corners[j];
+
+                // ignoramos a los pares de esquinas que no esten alineados
+                if (p1.x != p2.x && p1.y != p2.y)
+                    continue;
+
+                var wDir = Directions.GetDirAxis(p1- p2);
+
+                for (int k = 0; k < Directions.dirs_4.Count(); k++)
+                {
+                    var currentDir = Directions.dirs_4[k];
+
+                    // ignoramos las direciones que son paralelas a la pared
+                    if (wDir.Contains(currentDir)) 
+                        continue;
+
+                    var tuple = (p1, currentDir);
+
+                    if(!candidates.TryGetValue(tuple, out var other))
+                    {
+                        candidates.Add(tuple, p2);
+                    }
+                    else
+                    {
+                        if (other == p1)
+                        {
+                            candidates[tuple] = p2;
+                        }
+                        else if (p1 != p2)
+                        {
+                            var dist = Mathf.Abs(p1.y - p2.y);
+                            var oDist = Mathf.Abs(p1.y - other.y);
+
+                            // Nos quedamos con la muralla mas corta
+                            if (dist < oDist)
+                            {
+                                candidates[tuple] = p2;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Selecciona las murallas que no tengan tiles en frente
+        foreach (var ((p1, d), p2) in candidates) 
+        {
+            if(p1 == p2)
+            {
+                toR.Add((new Vector2Int[] { p1 }, Directions.directions_4[(int)d]));
+                continue;
+            }
+
+            var points = GetPointsBetween(p1, p2);
+            var include = true;
+            for (int i = 1; i < points.Count() - 1; i++) 
+            {
+                var point = points[i];
+                var other = point + Directions.directions_4[(int)d];
+                if (rooms[roomID].ContainsKey(other))
+                {
+                    include = false;
+                    break;
+                }
+            }
+
+            if (include)
+            {
+                toR.Add((points.ToArray(), Directions.directions_4[(int)d]));
+            }
+        }
+
+        return toR;
     }
 
     /// <summary>
@@ -276,33 +357,47 @@ public class Map : ICloneable
         var pairs = rooms[roomID];
         var corners = new List<Vector2Int>();
 
-        foreach (var p in pairs)
+        foreach (var (pos, tile) in pairs)
         {
-            var (pos, tile) = p;
             var value = NeigthborValue(pos.x, pos.y);
 
-            if (!NumbersSet.IsConcaveCorner(value))
-                continue;
-
-            var dirs = Directions.directions_4;
-            for (int i = 0; i < dirs.Count; i++)
+            if (NumbersSet.IsConcaveCorner(value))
             {
-                var oPos = pos + dirs[i];
-
-                pairs.TryGetValue(oPos, out var other);
-
-                if (other == null)
-                    continue;
-
-                var oValue = NeigthborValue(oPos.x, oPos.y);
-
-                if (NumbersSet.IsWall(oValue))
-                {
-                    corners.Add(oPos);
-                }
+                corners.Add(pos);
             }
         }
         return corners;
+    }
+
+    public List<Vector2Int> GetPointBetween(Vector2Int start,Vector2Int end)
+    {
+        var toR = new List<Vector2Int>();
+
+        if (start.x == end.x)
+        {
+            var minY = Math.Min(start.y, end.y);
+            var maxY = Math.Max(start.y, end.y);
+            for (int y = minY; y <= maxY; y++)
+            {
+                toR.Add(new Vector2Int(start.x, y));
+            }
+        }
+        else if (start.y == end.y)
+        {
+            var minX = Math.Min(start.x, end.x);
+            var maxX = Math.Max(start.x, end.x);
+            for (int x = minX; x <= maxX; x++)
+            {
+                toR.Add(new Vector2Int(x, start.y));
+            }
+        }
+        else
+        {
+            throw new ArgumentException(
+                "The points must be aligned either " +
+                "on the x-axis or the y-axis.");
+        }
+        return toR;
     }
 
     /// <summary>
@@ -394,7 +489,7 @@ public class Map : ICloneable
                 if (current == candidate)
                     continue;
 
-                if (current.y - current.y != 0)
+                if (current.y - candidate.y != 0)
                     continue;
 
                 var dist = Mathf.Abs(current.x - candidate.x);
@@ -434,6 +529,38 @@ public class Map : ICloneable
            walls.Add((wallTiles.ToArray(),dir));
         }
         return walls;
+    }
+
+    public List<Vector2Int> GetPointsBetween(Vector2Int start, Vector2Int end)
+    {
+        var toR = new List<Vector2Int>();
+        
+        if (start.x == end.x) // Alineado en el eje Y
+        {
+            int minY = Math.Min(start.y, end.y);
+            int maxY = Math.Max(start.y, end.y);
+            for (int y = minY; y <= maxY; y++)
+            {
+                toR.Add(new Vector2Int(start.x, y));
+            }
+        }
+        else if (start.y == end.y) // Alineado en el eje X
+        {
+            int minX = Math.Min(start.x, end.x);
+            int maxX = Math.Max(start.x, end.x);
+            for (int x = minX; x <= maxX; x++)
+            {
+                toR.Add(new Vector2Int(x, start.y));
+            }
+        }
+        else
+        {
+            throw new ArgumentException(
+                "The points must be aligned either" +
+                " on the x-axis or the y-axis.");
+        }
+
+        return toR;
     }
 
     /// <summary>

@@ -25,6 +25,14 @@ public static class Directions
         new Vector2Int(0, -1)  // Down
     };
 
+    public static List<Directions.Dirs_4> dirs_4 = new List<Directions.Dirs_4>()
+    {
+        Dirs_4.Right,
+        Dirs_4.Up,
+        Dirs_4.Left,
+        Dirs_4.Down
+    };
+
     public enum Dirs_8
     {
         Right = 0,
@@ -45,6 +53,23 @@ public static class Directions
         Left = 2,
         Down = 3,
         None = -1
+    }
+
+    public static Dirs_4 Next(this Dirs_4 dir)
+    {
+        switch (dir)
+        {
+            case Dirs_4.Right:
+                return Dirs_4.Up;
+            case Dirs_4.Up:
+                return Dirs_4.Left;
+            case Dirs_4.Left:
+                return Dirs_4.Down;
+            case Dirs_4.Down:
+                return Dirs_4.Right;
+            default:
+                return Dirs_4.None;
+        }
     }
 
     /// <summary>
@@ -90,7 +115,36 @@ public static class Directions
         return toR;
     }
 
-    public static List<Vector2Int> EnumToVector(List<Dirs_4> dir)
+    public static List<Dirs_4> GetDirAxis(Vector2 dir)
+    {
+        var toR = new List<Dirs_4>();
+
+        if(dir == Vector2.zero)
+        {
+            toR.Add(Dirs_4.None);
+            return toR;
+        }
+
+        if(dir.x == 0)
+        {
+            toR.Add(Dirs_4.Right);
+            toR.Add(Dirs_4.Left);
+        }
+        else if (dir.y == 0)
+        {
+            toR.Add(Dirs_4.Up);
+            toR.Add(Dirs_4.Down);
+        }
+        else
+        {
+            Debug.Log("Este vector es diagonal, deberia ser ignorado");
+            toR.Add(Dirs_4.None);
+        }
+
+        return toR;
+    }
+
+    public static List<Vector2Int> EnumsToVector(List<Dirs_4> dir)
     {
         var toR = new List<Vector2Int>();
         foreach (var d in dir)
@@ -107,5 +161,4 @@ public static class Directions
 
         return toR;
     }
-
 }
