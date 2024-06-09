@@ -30,18 +30,18 @@ public static class Utils
 
         var ((cords, rooms, tiles), w, h) = map.ToTileMatrix();
         var t = new Texture2D(w, h);
-        for (int i = 0; i < w; i++)
+        for (int i = 0; i < h; i++)
         {
-            for (int j = 0; j < h; j++)
+            for (int j = 0; j < w; j++)
             {
-                var c = rooms[i, j];
+                var c = rooms[j, i];
 
                 if (!colors.ContainsKey(c))
                 {
                     colors.Add(c, new Color(Random.Range(0, 1f), Random.Range(0, 1f), Random.Range(0, 1f)));
-                    t.SetPixel(i, j, colors[c]);
+                    t.SetPixel(j, i, colors[c]);
                 }
-                t.SetPixel(i, j, colors[c]);
+                t.SetPixel(j, i, colors[c]);
             }
         }
 

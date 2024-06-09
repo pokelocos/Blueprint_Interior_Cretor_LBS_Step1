@@ -281,8 +281,8 @@ public class Map : ICloneable
                         }
                         else if (p1 != p2)
                         {
-                            var dist = Mathf.Abs(p1.y - p2.y);
-                            var oDist = Mathf.Abs(p1.y - other.y);
+                            var dist = Vector2Int.Distance(p1, p2);
+                            var oDist = Vector2Int.Distance(p1, other);
 
                             // Nos quedamos con la muralla mas corta
                             if (dist < oDist)
@@ -292,6 +292,17 @@ public class Map : ICloneable
                         }
                     }
                 }
+            }
+        }
+
+        // Remueve muros repetidos
+        for (int i = candidates.Count() - 1; i >= 0; i--)
+        {
+            var ((p1, d), p2) = candidates.ElementAt(i);
+            if (candidates.TryGetValue((p2,d),out var o))
+            {
+                if(o == p1)
+                    candidates.Remove((p2, d));
             }
         }
 
@@ -639,14 +650,18 @@ public class Map : ICloneable
     }
 
     /// <summary>
-    /// Converts the rooms of the map into a tile matrix and returns the matrix along with its dimensions.
+    /// Converts the rooms of the map into a tile matrix and returns the matrix
+    /// along with its dimensions.
     /// </summary>
     /// <returns>
     /// A tuple containing:
     /// <list type="bullet">
-    /// <item><description><b>Matrix of Tile:</b> A matrix of Tile objects representing the map, where each position corresponds to a tile on the map.</description></item>
-    /// <item><description><b>Width:</b> The width of the matrix, which is the number of columns in the tile matrix.</description></item>
-    /// <item><description><b>Height:</b> The height of the matrix, which is the number of rows in the tile matrix.</description></item>
+    /// <item><description><b>Matrix of Tile:</b> A matrix of Tile objects representing 
+    /// the map, where each position corresponds to a tile on the map.</description></item>
+    /// <item><description><b>Width:</b> The width of the matrix, which is the number
+    /// of columns in the tile matrix.</description></item>
+    /// <item><description><b>Height:</b> The height of the matrix, which is the number 
+    /// of rows in the tile matrix.</description></item>
     /// </list>
     /// </returns>
     public ((Vector2Int[,], int[,], Tile[,]), int, int) ToTileMatrix()
@@ -667,6 +682,29 @@ public class Map : ICloneable
             }
         }
         return ((cords, roomID, tiles), rect.width + 1, rect.height + 1);
+    }
+
+    public static Map MatrixToMap(int[,] matrix, int w,int h)
+    {
+        var map = new Map();
+
+        for (int i = 0; i < h; i++)
+        {
+            for (int j = 0; j < w; j++)
+            {
+                if (matrix[j, i] == 0)
+                    continue;
+
+                var tile = new Tile(map);
+                tile.roomID = matrix[j, i];
+                if (!map.rooms.ContainsKey(tile.roomID))
+                {
+                    map.rooms.Add(tile.roomID, new Dictionary<Vector2Int, Tile>());
+                }
+                map.rooms[tile.roomID].Add(new Vector2Int(j, i), tile);
+            }
+        }
+        return map;
     }
 
     public (List<Vector2Int>, List<Tile>) GetNeigTiles(Vector2Int pos, List<Vector2Int> dirs)
@@ -706,6 +744,18 @@ public class Map : ICloneable
             msg += "\n";
         }
         Debug.Log(msg);
+    }
+
+    public (int, Dictionary<Vector2Int, Tile>)? GetRoom(Vector2Int vector2Int)
+    {
+        foreach (var r in rooms)
+        {
+            if (r.Value.ContainsKey(vector2Int))
+            {
+                return (r.Key, r.Value);
+            }
+        }
+        return null;
     }
     #endregion
 }

@@ -127,13 +127,13 @@ public static class Directions
 
         if(dir.x == 0)
         {
-            toR.Add(Dirs_4.Right);
-            toR.Add(Dirs_4.Left);
+            toR.Add(Dirs_4.Up);
+            toR.Add(Dirs_4.Down);
         }
         else if (dir.y == 0)
         {
-            toR.Add(Dirs_4.Up);
-            toR.Add(Dirs_4.Down);
+            toR.Add(Dirs_4.Right);
+            toR.Add(Dirs_4.Left);
         }
         else
         {

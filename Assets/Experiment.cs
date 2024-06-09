@@ -7,6 +7,7 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 using Optimization.Neigbors;
 using Problem.Neigbors;
+using Optimization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -52,20 +53,50 @@ public class Experiment : MonoBehaviour
             }
         };
 
+        // Terminator
+        var terminator = new ManualTerminator();
+
+        var hillClimbing = new HillClimbing();
+        var hcMap = hillClimbing.Execute(
+            pointMap,
+            evaluator,
+            terminator,
+            neigbor);
+
+        // Show SA Map
+        Utils.GenerateImage(hcMap, "HC_Map.png", Application.dataPath);
+        /*
         // Simulated Annealing
         var simulatedAnnealing = new SimulatedAnnealing();
         var saMap = simulatedAnnealing.Execute(
             pointMap,
             1000f,
             evaluator,
-            new ManualTerminator(),
-            neigbor); // neighbor function
+            terminator,
+            neigbor);
 
         // Show SA Map
         Utils.GenerateImage(saMap, "SA_Map.png", Application.dataPath);
+        */
+
 
         // Tabu Search
         //var tabuSearch = new TabuSearch();
+    }
+
+    public void Test() // TODO: hacer esto un "Unit-Test" para despues empaquetar
+    {
+        var m = new int[,] {
+            { 0, 1, 1, 0, 1,},
+            { 1, 1, 1, 0, 0,},
+            { 1, 1, 1, 1, 1,},
+            { 1, 0, 1, 0, 1,},
+            { 1, 1, 1, 1, 0,}
+        };
+
+        var map = Map.MatrixToMap(m,5,5);
+        Utils.GenerateImage(map, "TestWall.png", Application.dataPath);
+        var ws = map.GetWalls(1);
     }
 }
 
@@ -83,6 +114,14 @@ public class ExperimentEditor : Editor
             myScript.Execute();
             AssetDatabase.Refresh();
         }
+
+        /*
+        if (GUILayout.Button("Test"))
+        {
+            myScript.Test();
+            AssetDatabase.Refresh();
+        }
+        */
     }
 }
 

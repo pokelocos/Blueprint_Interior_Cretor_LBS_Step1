@@ -8,56 +8,59 @@ using System.Linq;
 using Unity.PlasticSCM.Editor.WebApi;
 using UnityEngine;
 
-public class SimulatedAnnealing
+namespace Optimization
 {
-    private float currentTemp = 1000;
-    private float coolingRate = 0.1f;
-
-    public Map Execute(Map init, float temp,IEvaluator evaluator,ITerminator terminator,IGetNeighbors GetNeighbors)
+    public class SimulatedAnnealing
     {
-        // Init
-        Map best = init;
-        currentTemp = temp;
+        private float currentTemp = 1000;
+        private float coolingRate = 0.1f;
 
-        // Algorithm
-        var fitness = evaluator.Execute(best);
-        while (currentTemp > 1)
+        public Map Execute(Map init, float temp, IEvaluator evaluator, ITerminator terminator, IGetNeighbors getNeighbors)
         {
-            var selected = GetNeighbors.Execute(best)
-                .Select(n => (n.Item1 as Map, n.Item2))
-                .ToList(); // OPTIMIZE:.toList()!
+            // Init
+            Map best = init;
+            currentTemp = temp;
 
-            for (int i = 0; i < selected.Count; i++)
+            // Algorithm
+            var fitness = evaluator.Execute(best);
+            while (currentTemp > 1)
             {
-                if (terminator?.Execute() ?? false)
-                {
-                    return best;
-                }
+                var selected = getNeighbors.Execute(best)
+                    .Select(n => (n.Item1 as Map, n.Item2))
+                    .ToList(); // OPTIMIZE:.toList()!
 
-                var (neig, move) = selected[i];
-                var newFitness = evaluator.Execute(neig);
-
-                var diff = newFitness - fitness;
-
-                if (diff > 0)
+                for (int i = 0; i < selected.Count; i++)
                 {
-                    best = neig;
-                    fitness = newFitness;
-                }
-                else
-                {
-                    var prob = Mathf.Exp(-diff / currentTemp);
-                    if (prob > UnityEngine.Random.Range(0.0f, 1.0f))
+                    if (terminator?.Execute() ?? false)
+                    {
+                        return best;
+                    }
+
+                    var (neig, move) = selected[i];
+                    var newFitness = evaluator.Execute(neig);
+
+                    var diff = newFitness - fitness;
+
+                    if (diff > 0)
                     {
                         best = neig;
                         fitness = newFitness;
                     }
+                    else
+                    {
+                        var prob = Mathf.Exp(-diff / currentTemp);
+                        if (prob > UnityEngine.Random.Range(0.0f, 1.0f))
+                        {
+                            best = neig;
+                            fitness = newFitness;
+                        }
+                    }
+
+                    currentTemp *= 1 - coolingRate;
                 }
-
-                currentTemp *= 1 - coolingRate;
             }
-        }
 
-        return best;
+            return best;
+        }
     }
 }

@@ -4,20 +4,57 @@ using System;
 using System.Linq;
 using UnityEditor;
 using System.Diagnostics;
+using Optimization.Evaluators;
+using Optimization.Terminators;
+using Optimization.Neigbors;
+
+namespace Optimization
+{
+    public class HillClimbing
+    {
+        public Map Execute(Map init, IEvaluator evaluator, ITerminator terminator, IGetNeighbors getNeighbors)
+        {
+            Map best = init;
+            var fitness = evaluator.Execute(best);
+
+            var stuck = false;
+            while (!stuck) 
+            { 
+                var selected = getNeighbors.Execute(best)
+                    .Select(n => (n.Item1 as Map, n.Item2))
+                    .ToList(); // OPTIMIZE:.toList()!
+
+                stuck = true;
+                for (int i = 0; i < selected.Count; i++)
+                {
+                    var (neig, move) = selected[i];
+                    var nFitness = evaluator.Execute(neig);
+
+                    if (nFitness > fitness)
+                    {
+                        best = neig;
+                        fitness = nFitness;
+                        stuck = false;
+                    }
+                }
+            }
+
+            return best;
+        }
+    }
+}
+
 /*
 namespace ISILab.AI.Optimization
 {
     public class HillClimbing
     {
         Func<IOptimizable, List<IOptimizable>> GetNeighbors;
-        public double Nlog = 0;
-        public double NNlog = 0;
-        public double Elog = 0;
 
-        public float _nbrsTimer = 0;
-        public float _fitTimer = 0;
-
-        public HillClimbing(IPopulation population, IEvaluator evaluator, ISelection selection, Func<IOptimizable, List<IOptimizable>> getNeighbors,  ITermination termination) : base( population, evaluator, selection, termination)
+        public HillClimbing(IPopulation population,
+            IEvaluator evaluator, ISelection selection,
+            Func<IOptimizable, List<IOptimizable>> getNeighbors,
+            ITermination termination) : base( population, evaluator, selection, termination)
         {
             GetNeighbors = getNeighbors;
         }
@@ -32,11 +69,8 @@ namespace ISILab.AI.Optimization
 
         public override void RunOnce()
         {
-            var clock = new Stopwatch();
-
             var last = Population.Generations.Last();
             
-            clock.Restart();
             var selection = this.Selection.SelectEvaluables(1, last);
 
             if(selection.Count == 0)

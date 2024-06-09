@@ -40,6 +40,20 @@ namespace Problem.Neigbors
                     toR.AddRange(neig);
                 }
             }
+
+            for (int i = toR.Count() - 1; i >= 0; i--)
+            {
+                var (m,s) = toR[i];
+                foreach (var (id,rooms) in (m as Map).rooms)
+                {
+                    if (rooms.Count() == 0)
+                    {
+                        toR.RemoveAt(i);
+                    }
+                    break;
+                }
+            }
+
             return toR;
         }
     }
@@ -98,7 +112,23 @@ namespace Problem.Neigbors
 
             var clone = map.Clone() as Map;
             var room = clone.rooms[roomID];
-            wall.ForEach(p => room.Remove(p));
+
+            var frontWall = wall.Select(p => p + dir).ToList(); // OPTIMIZE: .toList() may slow down the process, measure time!
+
+            for (int i = 0; i < frontWall.Count(); i++)
+            {
+                if (clone.GetRoom(frontWall[i]) != null)
+                {
+                    // OPTIMIZE: esto podria pasar sin los chequeos internos de setroom
+                    // por que ya seque room le pertence los tiles
+                    clone.SetRoomTiles(new List<Vector2Int>() { wall[i] }, roomID); 
+                }
+                else
+                {
+                    room.Remove(wall[i]);
+                }
+            }
+
             toR.Add((clone, "R:" + roomID + "D:" + dir.ToString() + "M:Retract"));
 
             return toR;
