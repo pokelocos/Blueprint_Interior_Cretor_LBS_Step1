@@ -8,6 +8,8 @@ using Random = UnityEngine.Random;
 using Optimization.Neigbors;
 using Problem.Neigbors;
 using Optimization;
+using Problem.Evaluators;
+using Optimization.Selector;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -56,15 +58,22 @@ public class Experiment : MonoBehaviour
         // Terminator
         var terminator = new ManualTerminator();
 
+        // Selector
+        var selector = new FirstBestSelector();
+
+        ///*
         var hillClimbing = new HillClimbing();
         var hcMap = hillClimbing.Execute(
             pointMap,
             evaluator,
             terminator,
-            neigbor);
+            neigbor,
+            selector);
 
         // Show SA Map
         Utils.GenerateImage(hcMap, "HC_Map.png", Application.dataPath);
+
+        //*/
         /*
         // Simulated Annealing
         var simulatedAnnealing = new SimulatedAnnealing();
@@ -79,13 +88,13 @@ public class Experiment : MonoBehaviour
         Utils.GenerateImage(saMap, "SA_Map.png", Application.dataPath);
         */
 
-
         // Tabu Search
         //var tabuSearch = new TabuSearch();
     }
 
     public void Test() // TODO: hacer esto un "Unit-Test" para despues empaquetar
     {
+        /*
         var m = new int[,] {
             { 0, 1, 1, 0, 1,},
             { 1, 1, 1, 0, 0,},
@@ -93,8 +102,15 @@ public class Experiment : MonoBehaviour
             { 1, 0, 1, 0, 1,},
             { 1, 1, 1, 1, 0,}
         };
+        */
 
-        var map = Map.MatrixToMap(m,5,5);
+        var m = new int[,]
+        {
+            { 1, 2 },
+            { 4, 3 },
+        };
+
+        var map = Map.MatrixToMap(m,2,2);
         Utils.GenerateImage(map, "TestWall.png", Application.dataPath);
         var ws = map.GetWalls(1);
     }
@@ -109,19 +125,17 @@ public class ExperimentEditor : Editor
         DrawDefaultInspector();
 
         Experiment myScript = (Experiment)target;
-        if (GUILayout.Button("Run"))
+        if (GUILayout.Button("Run SA"))
         {
             myScript.Execute();
             AssetDatabase.Refresh();
         }
 
-        /*
         if (GUILayout.Button("Test"))
         {
             myScript.Test();
             AssetDatabase.Refresh();
         }
-        */
     }
 }
 

@@ -7,36 +7,50 @@ using System.Diagnostics;
 using Optimization.Evaluators;
 using Optimization.Terminators;
 using Optimization.Neigbors;
+using System.Security.Cryptography;
+using Optimization.Selector;
 
 namespace Optimization
 {
     public class HillClimbing
     {
-        public Map Execute(Map init, IEvaluator evaluator, ITerminator terminator, IGetNeighbors getNeighbors)
+        List<List<(object,float,string)>> history; // population
+
+            
+
+        public Map Execute(Map init, IEvaluator evaluator, ITerminator terminator, IGetNeighbors getNeighbors,ISelector selector)
         {
             Map best = init;
             var fitness = evaluator.Execute(best);
 
             var stuck = false;
+            //var parche = 0;
             while (!stuck) 
             { 
                 var selected = getNeighbors.Execute(best)
                     .Select(n => (n.Item1 as Map, n.Item2))
                     .ToList(); // OPTIMIZE:.toList()!
 
-                stuck = true;
+                List<(object, float,string)> population = new(); // neig, fitness, move
+
                 for (int i = 0; i < selected.Count; i++)
                 {
                     var (neig, move) = selected[i];
                     var nFitness = evaluator.Execute(neig);
-
-                    if (nFitness > fitness)
-                    {
-                        best = neig;
-                        fitness = nFitness;
-                        stuck = false;
-                    }
+                    population.Add((neig, nFitness, move));
                 }
+
+                var (select, sFitness, sMove) = selector.Execute(population);
+
+                if (sFitness > fitness)
+                {
+                    best = select as Map;
+                    fitness = sFitness;
+                    stuck = false;
+                }
+
+                //Utils.GenerateImage(best, "HC_Map_" + parche + ".png", Application.dataPath);
+                //parche++;
             }
 
             return best;

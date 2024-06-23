@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static UnityEditor.PlayerSettings;
 
 namespace Problem.Neigbors
 {
@@ -25,7 +26,7 @@ namespace Problem.Neigbors
         public List<(object, string)> Execute(object obj)
         {
             var map = obj as Map;
-            var dirs = Directions.directions_4;
+            var dirs = Directions.directions_4; // remove this
             var toR = new List<(object, string)>();
 
             foreach (var (id, room) in map.rooms)
@@ -49,8 +50,8 @@ namespace Problem.Neigbors
                     if (rooms.Count() == 0)
                     {
                         toR.RemoveAt(i);
+                        break;
                     }
-                    break;
                 }
             }
 
@@ -117,13 +118,22 @@ namespace Problem.Neigbors
 
             for (int i = 0; i < frontWall.Count(); i++)
             {
-                if (clone.GetRoom(frontWall[i]) != null)
+                if(i == 0 || i == frontWall.Count() -1)
+                {
+                    if (NumbersSet.IsConcaveCorner(clone.NeigthborValue(wall[i].x, wall[i].y)))
+                    {
+                        continue; // preguntar si es concavo,si lo es me lo salto
+                    }
+                }
+
+                var (id,dict) = clone.GetRoom(frontWall[i]);
+                if (id != -1) 
                 {
                     // OPTIMIZE: esto podria pasar sin los chequeos internos de setroom
                     // por que ya seque room le pertence los tiles
-                    clone.SetRoomTiles(new List<Vector2Int>() { wall[i] }, roomID); 
+                    clone.SetRoomTiles(new List<Vector2Int>() { wall[i] }, id); 
                 }
-                else
+                else 
                 {
                     room.Remove(wall[i]);
                 }

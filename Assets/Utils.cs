@@ -46,6 +46,13 @@ public static class Utils
         }
 
         byte[] pngData = t.EncodeToPNG();
+
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+            Console.WriteLine("Folder created successfully.");
+        }
+
         string filePath = Path.Combine(path, fileName);
         File.WriteAllBytes(filePath, pngData);
 
@@ -99,5 +106,15 @@ public static class Utils
         }
         return default(T);
     }
+
+    public static T GetRandom<T>(this List<T> list)
+    {
+        if (list.Count <= 0)
+        {
+            return default(T);
+        }
+
+        return list[Random.Range(0, list.Count)];
+    }   
 
 }

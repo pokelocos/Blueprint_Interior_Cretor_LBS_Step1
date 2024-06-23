@@ -53,10 +53,9 @@ namespace Optimization
                         {
                             best = neig;
                             fitness = newFitness;
+                            currentTemp *= 1 - coolingRate;
                         }
                     }
-
-                    currentTemp *= 1 - coolingRate;
                 }
             }
 

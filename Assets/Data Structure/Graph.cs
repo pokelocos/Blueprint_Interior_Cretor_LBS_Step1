@@ -26,12 +26,18 @@ public class Graph
         get
         {
             var sum = new Vector2(0, 0);
+
+            if (nodes.Count > 0) {
+                Debug.Log("There are no nodes in the graph");
+                return sum;
+            }
+
             for (int i = 0; i < nodes.Count; i++)
             {
                 sum += nodes[i].pos;
             }
 
-            return sum / nodes.Count; // FIX?: divide por 0 si no hay nodos
+            return sum / nodes.Count;
         }
     }
 

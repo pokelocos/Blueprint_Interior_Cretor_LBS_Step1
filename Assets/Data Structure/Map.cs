@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using Unity.VisualScripting.FullSerializer;
 using UnityEditor;
 using UnityEngine;
@@ -26,7 +27,6 @@ public class Tile : ICloneable
         };
     }
     #endregion
-
 }
 
 public class Map : ICloneable
@@ -301,7 +301,7 @@ public class Map : ICloneable
             var ((p1, d), p2) = candidates.ElementAt(i);
             if (candidates.TryGetValue((p2,d),out var o))
             {
-                if(o == p1)
+                if(o == p1 && p1 != p2)
                     candidates.Remove((p2, d));
             }
         }
@@ -416,6 +416,7 @@ public class Map : ICloneable
     /// </summary>
     /// <param name="roomID"></param>
     /// <returns></returns>
+    [Obsolete()]
     private List<(Vector2Int[],Vector2Int)> GetVerticalWalls(int roomID)
     {
         var room = rooms[roomID];
@@ -482,6 +483,7 @@ public class Map : ICloneable
     /// </summary>
     /// <param name="roomID"></param>
     /// <returns></returns>
+    [Obsolete]
     private List<(Vector2Int[],Vector2Int)> GetHorizontalWalls(int roomID)
     {
         var room = rooms[roomID];
@@ -746,7 +748,7 @@ public class Map : ICloneable
         Debug.Log(msg);
     }
 
-    public (int, Dictionary<Vector2Int, Tile>)? GetRoom(Vector2Int vector2Int)
+    public (int, Dictionary<Vector2Int, Tile>) GetRoom(Vector2Int vector2Int)
     {
         foreach (var r in rooms)
         {
@@ -755,7 +757,50 @@ public class Map : ICloneable
                 return (r.Key, r.Value);
             }
         }
-        return null;
+        return (-1, null);
+    }
+
+    // override object.Equals
+    public override bool Equals(object obj)
+    {
+        var other = obj as Map; 
+
+        // check the type of obj
+        if (other == null) return false;
+
+        // check the amount of rooms is the same
+        if(this.rooms.Count != other.rooms.Count)
+            return false;
+
+        foreach (var (key,value) in this.rooms)
+        {
+            // check if the other map has the same room ids
+            if (other.rooms.TryGetValue(key, out var oRoom))
+            {
+                // check if the room has the same amount of tiles
+                if(value.Count != oRoom.Count)
+                    return false;
+
+                // check if the tiles are the same
+                foreach (var (pos,tile) in value)
+                {
+                    if (!oRoom.TryGetValue(pos, out var t))
+                        return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // override object.GetHashCode
+    public override int GetHashCode()
+    {
+        return base.GetHashCode();
     }
     #endregion
 }
