@@ -1,8 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -215,4 +218,55 @@ public static class Utils
         return toR;
     }
 
+    internal static void GenerateCSV<T>(T data, string fileName, string folderPath)
+    {
+        // Verificar si el tipo de datos es Data
+        if (data is Data experimentData)
+        {
+            // Construir la ruta completa del archivo
+            string filePath = Path.Combine(folderPath, fileName);
+
+            // Usar StringBuilder para crear el contenido del CSV
+            StringBuilder csvContent = new StringBuilder();
+
+            // Añadir encabezados
+            csvContent.AppendLine("Generation;TotalTime;ExplorationTime;EvaluatorTime;BestPathValue;BestGenPath;AveragePathValue;WorstPathValue;WorstGenPathValue;SuccessfulPathCount;DeadEndCount");
+
+            // Iterar sobre las generaciones y añadir datos
+            for (int i = 0; i < experimentData.generations.Count; i++)
+            {
+                var gen = experimentData.generations[i];
+                string line = $"{(i+1)};" +
+                    $"{gen.totalTime}e-03;" +
+                    $"{gen.explorationTime}e-03;" +
+                    $"{gen.evaluatorTime}e-03;" +
+                    $"{gen.best.Item2};" +
+                    $"{gen.genBest};" +
+                    $"{gen.average};" +
+                    $"{gen.worst};" +
+                    $"{gen.genWorst};" +
+                    $"{gen.successfulPathCount};" +
+                    $"{gen.deadEndCount}";
+                csvContent.AppendLine(line);
+            }
+
+            // Añadir tiempo total de ejecución al final del archivo CSV
+            csvContent.AppendLine($"Total Execution Time;{experimentData.totalTime}");
+
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+                Console.WriteLine("Folder created successfully.");
+            }
+
+            // Escribir el contenido en el archivo CSV
+            File.WriteAllText(filePath, csvContent.ToString(), Encoding.UTF8);
+
+            Debug.Log($"Data exported to CSV file at: {filePath}");
+        }
+        else
+        {
+            Debug.LogError("Invalid data type. Expected type is Data.");
+        }
+    }
 }

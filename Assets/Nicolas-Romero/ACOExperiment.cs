@@ -14,7 +14,7 @@ using UnityEditor;
 
 public class ACOExperiment : MonoBehaviour
 {
-    public GRAPHTEST graphTest;
+    public GameObject graphTest;
 
     public string path = "Output";
 
@@ -49,7 +49,7 @@ public class ACOExperiment : MonoBehaviour
         //Create Graph
         // var graph = TestUtils.ExampleGraph();
         //var graph = TestUtils.ExampleGraph_Trianlge();
-        var graph = graphTest.GenerateGraph();
+        var graph = graphTest.GetComponent<GRAPHTEST>().GenerateGraph();
 
         // Terminator
         var terminator = new AgregateTermination()
@@ -79,13 +79,16 @@ public class ACOExperiment : MonoBehaviour
             {
                 new ConectivityGraphRestriction(),
                 new SpritingRoomRestriction(),
-                new AmountRoomRestriction()
+                new AmountRoomRestriction(),
+                //new MinMaxAreaRestriction()
             }
         };
 
         // ACO Constructive
         var aco = new ACO();
-        var acoMap = aco.Execute(graph, antsPerIteration,pheromoneIntensity, evaporationRate, evaluator, terminator, restrcition);
+        var (acoMap, data) = aco.Execute(graph, antsPerIteration, pheromoneIntensity, evaporationRate, evaluator, terminator, restrcition);
+
+        // TODO: hacer algo cuando retorne acoMap.Count == 0
 
         // Generate images
         for (int i = 0; i < acoMap.Count; i++)
@@ -93,6 +96,9 @@ public class ACOExperiment : MonoBehaviour
             //Utils.GenerateImage(acoMap[i],graph, "aco_Map_"+i+".png", Application.dataPath +"/"+ path);
             Utils.GenerateSizedImage(acoMap[i], graph, 40, "aco_Map_" + i + ".png", Application.dataPath + "/" + path);
         }
+
+        Utils.GenerateCSV<Data>(data, "data.csv", Application.dataPath + "/" + path);
+
     }
 }
 

@@ -101,6 +101,9 @@ namespace Problem.Evaluators
 
 namespace Optimization.Restrictions
 {
+    /// <summary>
+    /// Regresan true si se cumple la restriccion.
+    /// </summary>
     public interface IRestriction
     {
         public bool Execute(object obj);
@@ -132,6 +135,55 @@ namespace Optimization.Restrictions
 
 namespace Problem.Restrictions
 {
+    public class MinMaxAreaRestriction : IRestriction
+    {
+        public bool Execute(object obj)
+        {
+            var tuple = obj as Tuple<Map, Graph>;
+            if (tuple == null)
+            {
+                Debug.LogWarning("No es un Tuple<Map, Graph>.");
+                return false;
+            }
+
+            var (map, graph) = tuple;
+
+            foreach (var (id, room) in map.rooms)
+            {
+                var node = graph.nodes.Where(n => n.id == id).ToList()[0];
+
+                var mArea = GetRoomArea(room);
+                if (node.minArea.x < mArea.x && mArea.x < node.maxArea.x &&
+                    node.minArea.y < mArea.y && mArea.x < node.maxArea.x)
+                {
+                    // do nothing
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public Vector2Int GetRoomArea(Dictionary<Vector2Int, Tile> room)
+        {
+            var minX = int.MaxValue;
+            var minY = int.MaxValue;
+            var maxX = int.MinValue;
+            var maxY = int.MinValue;
+
+            foreach (var (pos, tile) in room)
+            {
+                if (pos.x < minX) minX = pos.x;
+                if (pos.y < minY) minY = pos.y;
+                if (pos.x > maxX) maxX = pos.x;
+                if (pos.y > maxY) maxY = pos.y;
+            }
+            return (new Vector2Int(maxX - minX, maxY - minY));
+        }
+    }
     public class AmountRoomRestriction : IRestriction
     {
         public bool Execute(object obj)

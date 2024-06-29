@@ -8,22 +8,26 @@ using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class ToData // TODO: implementar despues de probar que el esxperimento funciona
+public class Data // TODO: implementar despues de probar que el esxperimento funciona
 {
+    public struct generacion
+    {
+        public float totalTime;
+        public float explorationTime;
+        public float evaluatorTime;
+        public float genBest;
+        public (List<Map>, float) best;
+        public float average;
+        public float genWorst;
+        public float worst;
+        public int successfulPathCount;
+        public int deadEndCount;
+    }
+
+    public List<generacion> generations = new ();
+
     // tiempo total de ejecucion
     public float totalTime;
-
-    // tiempo de ejecucion por generacion
-    public List<float> generationTimes;
-
-    // mejor mapa y evaluacion total
-    public (Map, float) best;
-
-    // mejor mapa y evaluacion por generacion
-    public List<(Map, float)> bests;
-
-    // veces que una hormiga pasa por cada mapa
-    public Dictionary<Map, int> mapCount;
 }
 
 public class ACO
@@ -32,26 +36,51 @@ public class ACO
 
     public bool enforceGraph = true;
 
-    public List<Map> Execute(Graph graph, int antCount,float pherIntnesity, float disipacion, IEvaluator evaluator, ITerminator terminator,IRestriction restriction)
+    public Data data;
+
+    public (List<Map>,Data) Execute(Graph graph, int antCount,float pherIntnesity, float disipacion, IEvaluator evaluator, ITerminator terminator,IRestriction restriction)
     {
+        var data = new Data();// <- For TESTING
+
         float bestEval = float.MinValue;
         List<Map> best = new();
+        float worstEval = float.MaxValue;
+        List<Map> worst = new();
+        
 
         // obtengo los nodos ordenados por la cantidad de vecinos
         var predeterminePath = GetNodeSortedByNeigs(graph);
 
+        var swTotal = new System.Diagnostics.Stopwatch(); // <- For TESTING
+        swTotal.Start();// <- For TESTING
         // cata iteracion del while es una nueva generacion de hormigas
         while (!terminator.Execute())
         {
+            float bestGenEval = float.MinValue;
+            List<Map> bestGen = new();
+            float worstGenEval = float.MaxValue;
+            List<Map> worstGen = new();
+            float averageCumulated = 0;
+
+            var gen = new Data.generacion();
+            var swGen = new System.Diagnostics.Stopwatch(); // <- For TESTING
+            swGen.Start();// <- For TESTING
+
             var paths = new List<List<Map>>(); // last node added, currentmap
 
+            var swExplore = new System.Diagnostics.Stopwatch(); // <- For TESTING
+            swExplore.Start();// <- For TESTING
             // cada hormiga explora un camino hasta llegar a completar un mapa con todas las habitaciones
             for (int i = 0; i < antCount; i++)
             {
                 var path = AntPath(graph, predeterminePath, restriction);
                 paths.Add(path);
             }
+            swExplore.Stop();// <- For TESTING
+            gen.explorationTime = swExplore.ElapsedMilliseconds;// <- For TESTING
 
+            var swEval = new System.Diagnostics.Stopwatch(); // <- For TESTING
+            swEval.Start();// <- For TESTING
             // por cada camino regreso las hormigas y aplico la pheromona
             foreach (var path in paths)
             {
@@ -62,17 +91,35 @@ public class ACO
                 }
 
                 var last = path.Last();
-
+                
                 // evaluo el camino
                 var pathEval = evaluator.Execute(last);
+                averageCumulated += pathEval;
 
+                if (bestGenEval < pathEval)
+                {
+                    bestGenEval = pathEval;
+                    bestGen = path;
+                }
                 if (bestEval < pathEval)
                 {
                     bestEval = pathEval;
                     best = path;
                 }
 
+                if (worstGenEval > pathEval)
+                {
+                    worstGenEval = pathEval;
+                    worstGen = path;
+                }
+                if(worstEval > pathEval)
+                {
+                    worstEval = pathEval;
+                    worst = path;
+                }
+
                 // actualizo feromonas
+                var cumulativePheromone = 0f;
                 for (int i = 0; i < path.Count - 1; i++)
                 {
                     var cur = path[i];
@@ -82,6 +129,8 @@ public class ACO
                     mapNeigs[cur][next] += pathEval * pherIntnesity;
                 }
             }
+            swEval.Stop();
+            gen.evaluatorTime = swEval.ElapsedMilliseconds; // <- For TESTING
 
             // disminuyo la feromona
             foreach (var (from, edge) in mapNeigs)
@@ -92,9 +141,23 @@ public class ACO
                     edge[m] *= disipacion;
                 }
             }
-        }
 
-        return best;
+            swGen.Stop();
+            gen.totalTime = swGen.ElapsedMilliseconds; // <- For TESTING
+            gen.successfulPathCount = paths.Count; // <- For TESTING
+            gen.deadEndCount = antCount - paths.Count; // <- For TESTING
+            gen.genBest = bestGenEval; // <- For TESTING
+            gen.best = (best, bestEval); // <- For TESTING
+            gen.average = (paths.Count != 0)? averageCumulated/(paths.Count) : -1; // <- For TESTING
+            gen.genWorst = worstGenEval; // <- For TESTING
+            gen.worst = worstEval; // <- For TESTING
+            data.generations.Add(gen); // <- For TESTING
+
+        }
+        swTotal.Stop(); // <- For TESTING
+        data.totalTime = swTotal.ElapsedMilliseconds; // <- For TESTING
+
+        return (best, data);
     }
 
     /// <summary>
