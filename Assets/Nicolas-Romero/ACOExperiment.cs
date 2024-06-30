@@ -78,7 +78,7 @@ public class ACOExperiment : MonoBehaviour
             res = new IRestriction[]
             {
                 new ConectivityGraphRestriction(),
-                new SpritingRoomRestriction(),
+                new SplitingRoomRestriction(),
                 new AmountRoomRestriction(),
                 //new MinMaxAreaRestriction()
             }

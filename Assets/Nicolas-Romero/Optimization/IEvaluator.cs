@@ -209,7 +209,7 @@ namespace Problem.Restrictions
         }
     }
 
-    public class SpritingRoomRestriction : IRestriction
+    public class SplitingRoomRestriction : IRestriction
     {
         public bool Execute(object obj)
         {
