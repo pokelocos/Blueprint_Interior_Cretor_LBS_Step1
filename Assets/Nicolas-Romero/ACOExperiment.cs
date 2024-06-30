@@ -18,7 +18,7 @@ public class ACOExperiment : MonoBehaviour
 
     [Range(1,100)]
     public int iterations = 10;
-    [Range(1, 100)]
+    [Range(1, 1000)]
     public int antsPerIteration = 5;
     [Range(0.01f, 10)]
     public float pheromoneIntensity = 1f;
@@ -68,7 +68,7 @@ public class ACOExperiment : MonoBehaviour
             {
                 (new VoidEvaluator(), evaluatorWeight[0]),
                 (new ExteriorWallEvaluator(), evaluatorWeight[1]),
-                //(new CornerEvaluator(), evaluatorWeight[2])
+                (new CornerEvaluator(), evaluatorWeight[2])
             }
         };
 
@@ -108,6 +108,13 @@ public class ACOExperimentEditor : Editor
             
             var (acoMap,data) = myScript.Execute(graph);
 
+            if (acoMap.Count <= 0)
+            {
+                Debug.Log("No se alcanzo ningun estado valido," +
+                    " intenta nuevamente o modifica los parametros de cantidad de hormigas o iteraciones,"+
+                    " asegurate de estar entregando parametros que tengn sentido con las restricciones.");
+            }
+
             // Generate images
             for (int i = 0; i < acoMap.Count; i++)
             {
@@ -131,6 +138,13 @@ public class ACOExperimentEditor : Editor
                 var graph = g.GenerateGraph();
                 var (acoMap, data) = myScript.Execute(graph);
 
+                if (acoMap.Count <= 0);
+                {
+                    Debug.Log("No se alcanzo ningun estado valido," +
+                        " intenta nuevamente o modifica los parametros de cantidad de hormigas o iteraciones," +
+                        " asegurate de estar entregando parametros que tengn sentido con las restricciones.");
+                }
+
                 // Generate images
                 for (int i = 0; i < acoMap.Count; i++)
                 {
@@ -138,7 +152,7 @@ public class ACOExperimentEditor : Editor
                     Utils.GenerateSizedImage(acoMap[i], graph, 40, "aco_Map_" + i + ".png", Application.dataPath + "/OutputExperiment/" + graph.name);
                 }
 
-                Utils.GenerateCSV<Data>(data, "data.csv", Application.dataPath + "/OutputExperiment");
+                Utils.GenerateCSV<Data>(data, "data.csv", Application.dataPath + "/OutputExperiment/" + graph.name);
             }
             AssetDatabase.Refresh();
         }

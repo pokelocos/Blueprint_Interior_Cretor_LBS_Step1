@@ -149,7 +149,7 @@ Transform:
   m_GameObject: {fileID: 3374560}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 5.33, y: 4.28, z: 0}
+  m_LocalPosition: {x: 4.62, y: 0.27, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -506,9 +506,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d3a0efeeaa8fa54081ad8b1942af221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  graphTest: {fileID: 1189090580}
+  graphTest: {fileID: 623292645}
   iterations: 10
-  antsPerIteration: 5
+  antsPerIteration: 200
   pheromoneIntensity: 1
   evaporationRate: 0.9
   seed: 
@@ -727,12 +727,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0.09372544, g: 1, b: 0, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &417076750
 GameObject:
   m_ObjectHideFlags: 0
@@ -810,7 +809,7 @@ Transform:
   m_GameObject: {fileID: 443911289}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -2.67, y: 0.09, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -987,12 +986,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 1, g: 0.8795769, b: 0, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &589254471
 GameObject:
   m_ObjectHideFlags: 0
@@ -1084,6 +1082,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 755768480}
   - {fileID: 2078483449}
   - {fileID: 489595399}
   - {fileID: 862384088}
@@ -1092,7 +1091,6 @@ Transform:
   - {fileID: 2064297361}
   - {fileID: 1114972640}
   - {fileID: 1511563964}
-  - {fileID: 755768480}
   - {fileID: 1486657995}
   - {fileID: 1066457796}
   - {fileID: 1629437259}
@@ -1194,12 +1192,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0.79600835, g: 0.20953786, b: 0.5325206, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &686982897
 GameObject:
   m_ObjectHideFlags: 0
@@ -1378,7 +1375,23 @@ MonoBehaviour:
   maxArea: {x: 12, y: 12}
   type: 0
   color: {r: 0.26960963, g: 0.73226774, b: 0.800812, a: 1}
-  other: []
+  other:
+  - {fileID: 2078483448}
+  - {fileID: 489595398}
+  - {fileID: 862384087}
+  - {fileID: 1492539087}
+  - {fileID: 1206139378}
+  - {fileID: 2064297360}
+  - {fileID: 1114972639}
+  - {fileID: 1511563963}
+  - {fileID: 1486657994}
+  - {fileID: 1066457795}
+  - {fileID: 1629437258}
+  - {fileID: 649369172}
+  - {fileID: 1796316996}
+  - {fileID: 1468086800}
+  - {fileID: 1194335115}
+  - {fileID: 360000311}
 --- !u!4 &755768480
 Transform:
   m_ObjectHideFlags: 0
@@ -1639,12 +1652,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0.5752695, g: 0.41440874, b: 0.121866584, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -1978,12 +1990,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0.0081192255, g: 0.8170389, b: 0.37528485, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &1092943163
 GameObject:
   m_ObjectHideFlags: 0
@@ -2029,7 +2040,7 @@ Transform:
   m_GameObject: {fileID: 1092943163}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.8, y: 6.99, z: 0}
+  m_LocalPosition: {x: 1.05, y: 7.97, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2110,12 +2121,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 1, g: 0.1012843, b: 0, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &1124016421
 GameObject:
   m_ObjectHideFlags: 0
@@ -2263,12 +2273,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0.16488159, g: 0.5570945, b: 0.41362888, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &1206139378
 GameObject:
   m_ObjectHideFlags: 0
@@ -2313,12 +2322,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0.6087374, g: 0.6588118, b: 0.19222522, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &1242920221
 GameObject:
   m_ObjectHideFlags: 0
@@ -2516,12 +2524,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0.4312604, g: 0.34665853, b: 0.033648133, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &1471161502
 GameObject:
   m_ObjectHideFlags: 0
@@ -2615,12 +2622,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0, g: 0.19104338, b: 1, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &1492539087
 GameObject:
   m_ObjectHideFlags: 0
@@ -2665,12 +2671,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0.018607259, g: 0.35490257, b: 0.46738285, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &1511563963
 GameObject:
   m_ObjectHideFlags: 0
@@ -2715,12 +2720,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 1, g: 0, b: 0.89550066, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &1555049921
 GameObject:
   m_ObjectHideFlags: 0
@@ -2916,12 +2920,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0.37233263, g: 0.53118426, b: 0.97782886, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &1658922978
 GameObject:
   m_ObjectHideFlags: 0
@@ -3119,12 +3122,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0.29542273, g: 0.2074703, b: 0.71787727, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &1828146838
 GameObject:
   m_ObjectHideFlags: 0
@@ -3447,12 +3449,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0.32949358, g: 0.504245, b: 0.24115205, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &2078483448
 GameObject:
   m_ObjectHideFlags: 0
@@ -3497,12 +3498,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0, g: 1, b: 0.40506315, a: 1}
-  other:
-  - {fileID: 755768478}
+  other: []
 --- !u!1 &2129412938
 GameObject:
   m_ObjectHideFlags: 0

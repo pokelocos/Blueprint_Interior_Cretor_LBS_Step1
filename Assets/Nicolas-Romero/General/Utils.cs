@@ -230,23 +230,30 @@ public static class Utils
             StringBuilder csvContent = new StringBuilder();
 
             // Añadir encabezados
-            csvContent.AppendLine("Generation;TotalTime;ExplorationTime;EvaluatorTime;BestPathValue;BestGenPath;AveragePathValue;WorstPathValue;WorstGenPathValue;SuccessfulPathCount;DeadEndCount");
+            csvContent.AppendLine(
+                "Generation;" +             // 1
+                "TotalTime;" +              // 2
+                "ExplorationTime;" +        // 3
+                "EvaluatorTime;" +          // 4
+                "BestPathValue;" +          // 5
+                "BestGenPath;" +            // 6
+                "AveragePathValue;" +       // 7
+                "SuccessfulPathCount;" +    // 8
+                "DeadEndCount");            // 9
 
             // Iterar sobre las generaciones y añadir datos
             for (int i = 0; i < experimentData.generations.Count; i++)
             {
                 var gen = experimentData.generations[i];
-                string line = $"{(i+1)};" +
-                    $"{gen.totalTime}e-03;" +
-                    $"{gen.explorationTime}e-03;" +
-                    $"{gen.evaluatorTime}e-03;" +
-                    $"{gen.best.Item2};" +
-                    $"{gen.genBest};" +
-                    $"{gen.average};" +
-                    $"{gen.worst};" +
-                    $"{gen.genWorst};" +
-                    $"{gen.successfulPathCount};" +
-                    $"{gen.deadEndCount}";
+                string line = $"{(i+1)};" +             // Generación 1
+                    $"{gen.totalTime}e-03;" +           // TotalTime 2
+                    $"{gen.explorationTime}e-03;" +     // ExplorationTime 3
+                    $"{gen.evaluatorTime}e-03;" +       // EvaluatorTime 4
+                    $"{gen.best.Item2};" +              // BestPathValue 5
+                    $"{gen.genBest};" +                 // BestGenPath 6
+                    $"{gen.average};" +                 // AveragePathValue 7
+                    $"{gen.successfulPathCount};" +     // SuccessfulPathCount 8
+                    $"{gen.deadEndCount}";              // DeadEndCount 9
                 csvContent.AppendLine(line);
             }
 

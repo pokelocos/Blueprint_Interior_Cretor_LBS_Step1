@@ -5,6 +5,7 @@ using Optimization.Terminators;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Unity.VisualScripting;
 using Unity.VisualScripting.Antlr3.Runtime.Collections;
@@ -20,8 +21,6 @@ public class Data // TODO: implementar despues de probar que el esxperimento fun
         public float genBest;
         public (List<Map>, float) best;
         public float average;
-        public float genWorst;
-        public float worst;
         public int successfulPathCount;
         public int deadEndCount;
     }
@@ -46,8 +45,6 @@ public class ACO
 
         float bestEval = float.MinValue;
         List<Map> best = new();
-        float worstEval = float.MaxValue;
-        List<Map> worst = new();
         
 
         // obtengo los nodos ordenados por la cantidad de vecinos
@@ -60,8 +57,6 @@ public class ACO
         {
             float bestGenEval = float.MinValue;
             List<Map> bestGen = new();
-            float worstGenEval = float.MaxValue;
-            List<Map> worstGen = new();
             float averageCumulated = 0;
 
             var gen = new Data.generacion();
@@ -89,6 +84,7 @@ public class ACO
                 // si la hormiga no termino el camino
                 if (path.Count < graph.nodes.Count)
                 {
+                    gen.deadEndCount++; // <- For TESTING
                     continue; // no suma feromonas
                 }
 
@@ -103,22 +99,6 @@ public class ACO
                     bestGenEval = pathEval;
                     bestGen = path;
                 }
-                if (bestEval < pathEval)
-                {
-                    bestEval = pathEval;
-                    best = path;
-                }
-
-                if (worstGenEval > pathEval)
-                {
-                    worstGenEval = pathEval;
-                    worstGen = path;
-                }
-                if(worstEval > pathEval)
-                {
-                    worstEval = pathEval;
-                    worst = path;
-                }
 
                 // actualizo feromonas
                 for (int i = 0; i < path.Count - 1; i++)
@@ -127,7 +107,7 @@ public class ACO
                     var next = path[i + 1];
 
                     // VER Si ESTO es la mejor forma de aumentar el valor de la feromona
-                    mapNeigs[cur][next] += pathEval * pherIntnesity;
+                    mapNeigs[cur][next] += (pathEval * pherIntnesity);
                 }
             }
             swEval.Stop();
@@ -147,11 +127,14 @@ public class ACO
             gen.totalTime = swGen.ElapsedMilliseconds; // <- For TESTING
             gen.successfulPathCount = paths.Count; // <- For TESTING
             gen.deadEndCount = antCount - paths.Count; // <- For TESTING
+            if (bestEval < bestGenEval)
+            {
+                bestEval = bestGenEval;
+                best = bestGen;
+            }
             gen.genBest = bestGenEval; // <- For TESTING
             gen.best = (best, bestEval); // <- For TESTING
             gen.average = (paths.Count != 0)? averageCumulated/(paths.Count) : -1; // <- For TESTING
-            gen.genWorst = worstGenEval; // <- For TESTING
-            gen.worst = worstEval; // <- For TESTING
             data.generations.Add(gen); // <- For TESTING
 
         }
@@ -187,19 +170,20 @@ public class ACO
 
             // si ya explore alguno continua algun de esos 
             var validAmount = ValidsPathAmount(neigs);
-            if (UnityEngine.Random.Range(0f, validAmount + 1f) < validAmount)
+            var rValue = UnityEngine.Random.Range(0f, validAmount + 1f);
+            if (rValue < validAmount)
             {
                 // si existe elijo por pheromona
                 var select = neigs.ToList().RandomRullete(n => n.Value);
                 pathList.Add(select.Key);
                 current = select.Key;
             }
-            else // o decido si segir explorando
+            else // o decido si seguir explorando
             {
                 // creo un nuevo diccionario
                 var (neig, value) = AntExplore(current, graph, nPrev, nCurrent, restriction);
 
-                if(value >= 0)
+                if(value > 0)
                 {
                     pathList.Add(neig);
                     current = neig;
@@ -208,84 +192,6 @@ public class ACO
                 {
                     return pathList;
                 }
-            }
-
-
-            if (neigs != null && neigs.Count() != 0)
-            {
-                // exploro 1 camino
-
-                
-
-                // si existe elijo por pheromona
-                var select = neigs.ToList().RandomRullete(n => n.Value);
-
-                if(select.Key == null)
-                {
-                    var transitable = false;
-                    foreach (var (map, value) in mapNeigs[current])
-                    {
-                        if (value != 0)
-                        {
-                            transitable = true;
-                        }
-                    }
-
-                    if (!transitable)
-                    {
-                        var roots = GetRoots(current);
-                        foreach (var root in roots)
-                            mapNeigs[root][current] = 0;
-
-                        return pathList;
-                    }
-                }
-
-                pathList.Add(select.Key);
-                current = select.Key;
-            }
-            else
-            {
-
-                // creo un nuevo diccionario
-                mapNeigs.Add(current, new Dictionary<Map, float>());
-
-                // si no existe los genero
-                var maps = GenerateNeigs(current, graph, nPrev, nCurrent);
-
-                // añado los nuevos mapas al diccionario
-                var transitable = false;
-                foreach (var map in maps)
-                {
-                    // no son añadidos si no cumplen con la restriccion
-                    if(restriction.Execute(new Tuple<Map, Graph>(map,graph)))
-                    {
-                        if (!mapNeigs[current].ContainsKey(map))
-                        {
-                            mapNeigs[current].Add(map, 1);
-                        }
-                        transitable = true;
-                    }
-                    else
-                    {
-                        //mapNeigs[current].Add(map, 0);
-                    }
-                }
-
-                if (!transitable)
-                {
-                    var roots = GetRoots(current);
-                    foreach (var root in roots)
-                        mapNeigs[root][current] = 0;
-
-                    return pathList;
-                }
-
-                // luego elijo random (o por pheromono que en este caso es lo mismo)
-                //var select = maps.RandomRullete(n => n.Item2);
-                var select = mapNeigs[current].ToList().GetRandom().Key;
-                pathList.Add(select);
-                current = select;
             }
         }
 
@@ -300,31 +206,6 @@ public class ACO
             sum += (neigs.ElementAt(j).Value > 0) ? 1 : 0;
         }
         return sum;
-    }
-
-    public (Map,float) AntExplore(Map current, Graph graph, Graph.Node nodePrev, Graph.Node nodeCurrent,IRestriction restriction)
-    {
-        // creo un nuevo diccionario
-        if (!mapNeigs.ContainsKey(current))
-        {
-            mapNeigs.Add(current, new Dictionary<Map, float>());
-        }
-
-        // si no existe los genero
-        var map = GenerateNeig(current, graph, nodePrev, nodeCurrent);
-
-        // no son añadidos si no cumplen con la restriccion
-        if (restriction.Execute(new Tuple<Map, Graph>(map, graph)))
-        {
-            mapNeigs[current].Add(map, 1);
-            return (map,1);
-
-        }
-        else
-        {
-            mapNeigs[current].Add(map, 0);
-            return (map,0);
-        }
     }
 
     private List<Map> GetRoots(Map map)
@@ -344,7 +225,12 @@ public class ACO
     {
         var init = new Map();
         var current = node;
-        init.SetRoomTiles(new Vector2Int(0, 0), current.maxArea, node.id);
+
+        // selecciono un tamaño para la nueva habitacion
+        var w = UnityEngine.Random.Range((int)node.minArea.x, (int)node.maxArea.x + 1);
+        var h = UnityEngine.Random.Range((int)node.minArea.y, (int)node.maxArea.y + 1);
+
+        init.SetRoomTiles(new Vector2Int(0, 0), new Vector2Int(w, h), node.id);
 
         return init;
     }
@@ -359,9 +245,40 @@ public class ACO
                         return pathList;
                     }*/
 
-    private Map GenerateNeig(Map prev, Graph graph, Graph.Node nodePrev, Graph.Node nodeCurrent)
-    {
 
+
+    public (Map, float) AntExplore(Map current, Graph graph, Graph.Node nodePrev, Graph.Node nodeCurrent, IRestriction restriction)
+    {
+        // selecciono un tamaño para la nueva habitacion
+        var w = UnityEngine.Random.Range((int)nodeCurrent.minArea.x, (int)nodeCurrent.maxArea.x + 1);
+        var h = UnityEngine.Random.Range((int)nodeCurrent.minArea.y, (int)nodeCurrent.maxArea.y + 1);
+
+        // obtengo los posibles pivotes para ese tamaño
+        var pivots = GetPivotsNeigs(nodePrev.pos + nodeCurrent.pos,new Vector2Int(w,h), nodePrev.id, current);
+
+        // selecciono uno aleatorio
+        var pivot = pivots.GetRandom();
+        var other = current.Clone() as Map;
+        other.SetRoomTiles(pivot, pivot + nodeCurrent.maxArea, nodeCurrent.id);
+        
+        // no son añadidos si no cumplen con la restriccion
+        if (restriction.Execute(new Tuple<Map, Graph>(other, graph)))
+        {
+            if (!mapNeigs[current].ContainsKey(other))
+            {
+                mapNeigs[current].Add(other, 1);
+            }
+            return (other, 1);
+
+        }
+        else
+        {
+            if (!mapNeigs[current].ContainsKey(other))
+            {
+                mapNeigs[current].Add(other, 0);
+            }
+            return (other, 0);
+        }
     }
 
     private List<Map> GenerateNeigs(Map prev, Graph graph, Graph.Node nodePrev, Graph.Node nodeCurrent)
@@ -452,13 +369,13 @@ public class ACO
 
             // obtengo las posiciones vacias
             var emptyPos = GetAdjacent(dir, room);
-            
+
             // obtengo el desplazamiento principal
-            var starDisp = (StartDisp(dir) * sizeArea) - StartDisp(dir);
+            var starDisp = (StartDisp(dir) * sizeArea);// - StartDisp(dir);
             //var v1 = Vector2Int.zero;
 
             // obtengo el desplazamiento secundario
-            var endDisp = (EndDisp(dir) * sizeArea) - EndDisp(dir);
+            var endDisp = (EndDisp(dir) * sizeArea);// - EndDisp(dir);
 
             foreach (var pos in emptyPos)
             {
