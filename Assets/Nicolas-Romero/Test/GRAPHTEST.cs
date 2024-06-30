@@ -9,7 +9,7 @@ public class GRAPHTEST : MonoBehaviour
 {
     public Graph GenerateGraph()
     {
-        var graph = new Graph();
+        var graph = new Graph(this.gameObject.name);
 
         var indexs = new Dictionary<NODETEST, int>();
 

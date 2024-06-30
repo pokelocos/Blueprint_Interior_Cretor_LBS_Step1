@@ -11,7 +11,7 @@ public class TestUtils
 {
     public static Graph ExampleGraph()
     {
-        var graph = new Graph();
+        var graph = new Graph("Example");
         graph.nodes.Add(new Graph.Node()
         {
             name = "A",
@@ -61,7 +61,7 @@ public class TestUtils
 
     public static Graph ExampleGraph_Trianlge()
     {
-        var graph = new Graph();
+        var graph = new Graph("Test_Triangle");
         graph.nodes.Add(new Graph.Node()
         {
             name = "A",

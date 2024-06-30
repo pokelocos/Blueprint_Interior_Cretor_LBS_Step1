@@ -153,8 +153,8 @@ namespace Problem.Restrictions
                 var node = graph.nodes.Where(n => n.id == id).ToList()[0];
 
                 var mArea = GetRoomArea(room);
-                if (node.minArea.x < mArea.x && mArea.x < node.maxArea.x &&
-                    node.minArea.y < mArea.y && mArea.x < node.maxArea.x)
+                if (node.minArea.x <= mArea.x && mArea.x <= node.maxArea.x &&
+                    node.minArea.y <= mArea.y && mArea.x <= node.maxArea.x)
                 {
                     // do nothing
                 }
@@ -181,7 +181,7 @@ namespace Problem.Restrictions
                 if (pos.x > maxX) maxX = pos.x;
                 if (pos.y > maxY) maxY = pos.y;
             }
-            return (new Vector2Int(maxX - minX, maxY - minY));
+            return (new Vector2Int(maxX - minX + 1, maxY - minY + 1));
         }
     }
     public class AmountRoomRestriction : IRestriction

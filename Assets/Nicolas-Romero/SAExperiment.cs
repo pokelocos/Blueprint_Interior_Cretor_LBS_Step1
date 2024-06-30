@@ -103,7 +103,7 @@ public class SAExperiment : MonoBehaviour
             { 1, 1, 1, 1, 0,}
         };
         */
-        var g = new Graph();
+        var g = new Graph("Test_1");
         g.nodes.Add(new Graph.Node()
         {
             name = "A",

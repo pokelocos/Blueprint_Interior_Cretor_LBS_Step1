@@ -1,4 +1,5 @@
 using Optimization.Evaluators;
+using Optimization.Neigbors;
 using Optimization.Restrictions;
 using Optimization.Terminators;
 using System;
@@ -6,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
+using Unity.VisualScripting.Antlr3.Runtime.Collections;
 using UnityEngine;
 
 public class Data // TODO: implementar despues de probar que el esxperimento funciona
@@ -119,7 +121,6 @@ public class ACO
                 }
 
                 // actualizo feromonas
-                var cumulativePheromone = 0f;
                 for (int i = 0; i < path.Count - 1; i++)
                 {
                     var cur = path[i];
@@ -176,8 +177,46 @@ public class ACO
         {
             var (nPrev, nCurrent) = path[i];
 
-            if (mapNeigs.TryGetValue(current, out var neigs))
+            if (!mapNeigs.ContainsKey(current))
             {
+                mapNeigs.Add(current, new Dictionary<Map, float>());
+            }
+
+            //var neigs = mapNeigs[current];
+            mapNeigs.TryGetValue(current, out var neigs);
+
+            // si ya explore alguno continua algun de esos 
+            var validAmount = ValidsPathAmount(neigs);
+            if (UnityEngine.Random.Range(0f, validAmount + 1f) < validAmount)
+            {
+                // si existe elijo por pheromona
+                var select = neigs.ToList().RandomRullete(n => n.Value);
+                pathList.Add(select.Key);
+                current = select.Key;
+            }
+            else // o decido si segir explorando
+            {
+                // creo un nuevo diccionario
+                var (neig, value) = AntExplore(current, graph, nPrev, nCurrent, restriction);
+
+                if(value >= 0)
+                {
+                    pathList.Add(neig);
+                    current = neig;
+                }
+                else
+                {
+                    return pathList;
+                }
+            }
+
+
+            if (neigs != null && neigs.Count() != 0)
+            {
+                // exploro 1 camino
+
+                
+
                 // si existe elijo por pheromona
                 var select = neigs.ToList().RandomRullete(n => n.Value);
 
@@ -207,6 +246,7 @@ public class ACO
             }
             else
             {
+
                 // creo un nuevo diccionario
                 mapNeigs.Add(current, new Dictionary<Map, float>());
 
@@ -214,6 +254,7 @@ public class ACO
                 var maps = GenerateNeigs(current, graph, nPrev, nCurrent);
 
                 // añado los nuevos mapas al diccionario
+                var transitable = false;
                 foreach (var map in maps)
                 {
                     // no son añadidos si no cumplen con la restriccion
@@ -223,20 +264,11 @@ public class ACO
                         {
                             mapNeigs[current].Add(map, 1);
                         }
+                        transitable = true;
                     }
                     else
                     {
                         //mapNeigs[current].Add(map, 0);
-                    }
-                }
-
-                // si no hay mapas que cumplen con la restriccion
-                var transitable = false;
-                foreach (var (map, value) in mapNeigs[current])
-                {
-                    if (value != 0)
-                    {
-                        transitable = true;
                     }
                 }
 
@@ -260,6 +292,41 @@ public class ACO
         return pathList;
     }
 
+    public int ValidsPathAmount(Dictionary<Map,float> neigs)
+    {
+        var sum = 0;
+        for (int j = 0; j < neigs.Count; j++)
+        {
+            sum += (neigs.ElementAt(j).Value > 0) ? 1 : 0;
+        }
+        return sum;
+    }
+
+    public (Map,float) AntExplore(Map current, Graph graph, Graph.Node nodePrev, Graph.Node nodeCurrent,IRestriction restriction)
+    {
+        // creo un nuevo diccionario
+        if (!mapNeigs.ContainsKey(current))
+        {
+            mapNeigs.Add(current, new Dictionary<Map, float>());
+        }
+
+        // si no existe los genero
+        var map = GenerateNeig(current, graph, nodePrev, nodeCurrent);
+
+        // no son añadidos si no cumplen con la restriccion
+        if (restriction.Execute(new Tuple<Map, Graph>(map, graph)))
+        {
+            mapNeigs[current].Add(map, 1);
+            return (map,1);
+
+        }
+        else
+        {
+            mapNeigs[current].Add(map, 0);
+            return (map,0);
+        }
+    }
+
     private List<Map> GetRoots(Map map)
     {
         var toR = new List<Map>();
@@ -280,6 +347,21 @@ public class ACO
         init.SetRoomTiles(new Vector2Int(0, 0), current.maxArea, node.id);
 
         return init;
+    }
+
+    /*
+     *      if (!transitable)
+                    {
+                        var roots = GetRoots(current);
+                        foreach (var root in roots)
+                            mapNeigs[root][current] = 0;
+
+                        return pathList;
+                    }*/
+
+    private Map GenerateNeig(Map prev, Graph graph, Graph.Node nodePrev, Graph.Node nodeCurrent)
+    {
+
     }
 
     private List<Map> GenerateNeigs(Map prev, Graph graph, Graph.Node nodePrev, Graph.Node nodeCurrent)
@@ -355,7 +437,7 @@ public class ACO
         var toR = new List<Vector2Int>();
 
         // obtengo la direcciones a la que se encuentra la nueva habitacion
-        var dirs = enforceGraph ?
+        var dirs = !enforceGraph ?
             Directions.AllDirs():
             Directions.AngulatedDirs(nodeVector);
 

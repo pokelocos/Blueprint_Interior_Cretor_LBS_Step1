@@ -20,8 +20,15 @@ public class Graph
         public Node n1, n2;
     }
 
+    public string name;
+
     public List<Node> nodes = new List<Node>();
     public List<Edge> edges = new List<Edge>();
+
+    public Graph(string name)
+    {
+        this.name = name;
+    }
 
     public Vector2 Center
     {

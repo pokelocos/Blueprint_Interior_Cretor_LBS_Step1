@@ -16,8 +16,6 @@ public class ACOExperiment : MonoBehaviour
 {
     public GameObject graphTest;
 
-    public string path = "Output";
-
     [Range(1,100)]
     public int iterations = 10;
     [Range(1, 100)]
@@ -33,7 +31,9 @@ public class ACOExperiment : MonoBehaviour
 
     public bool enforceGraphStructure = true;
 
-    public void Execute()
+
+
+    public (List<Map>, Data) Execute(Graph graph)
     {
         // init Seed
         if (seed != "")
@@ -49,7 +49,7 @@ public class ACOExperiment : MonoBehaviour
         //Create Graph
         // var graph = TestUtils.ExampleGraph();
         //var graph = TestUtils.ExampleGraph_Trianlge();
-        var graph = graphTest.GetComponent<GRAPHTEST>().GenerateGraph();
+        //var graph = graphTest.GetComponent<GRAPHTEST>().GenerateGraph();
 
         // Terminator
         var terminator = new AgregateTermination()
@@ -68,7 +68,7 @@ public class ACOExperiment : MonoBehaviour
             {
                 (new VoidEvaluator(), evaluatorWeight[0]),
                 (new ExteriorWallEvaluator(), evaluatorWeight[1]),
-                (new CornerEvaluator(), evaluatorWeight[2])
+                //(new CornerEvaluator(), evaluatorWeight[2])
             }
         };
 
@@ -80,24 +80,13 @@ public class ACOExperiment : MonoBehaviour
                 new ConectivityGraphRestriction(),
                 new SplitingRoomRestriction(),
                 new AmountRoomRestriction(),
-                //new MinMaxAreaRestriction()
+                new MinMaxAreaRestriction()
             }
         };
 
         // ACO Constructive
         var aco = new ACO();
-        var (acoMap, data) = aco.Execute(graph, antsPerIteration, pheromoneIntensity, evaporationRate, evaluator, terminator, restrcition);
-
-        // TODO: hacer algo cuando retorne acoMap.Count == 0
-
-        // Generate images
-        for (int i = 0; i < acoMap.Count; i++)
-        {
-            //Utils.GenerateImage(acoMap[i],graph, "aco_Map_"+i+".png", Application.dataPath +"/"+ path);
-            Utils.GenerateSizedImage(acoMap[i], graph, 40, "aco_Map_" + i + ".png", Application.dataPath + "/" + path);
-        }
-
-        Utils.GenerateCSV<Data>(data, "data.csv", Application.dataPath + "/" + path);
+        return aco.Execute(graph, antsPerIteration, pheromoneIntensity, evaporationRate, evaluator, terminator, restrcition);
 
     }
 }
@@ -111,11 +100,46 @@ public class ACOExperimentEditor : Editor
         DrawDefaultInspector();
         ACOExperiment myScript = (ACOExperiment)target;
 
-        if (GUILayout.Button("Run ACO"))
+        if (GUILayout.Button("Run Test Selected"))
         {
-            FileUtil.DeleteFileOrDirectory(Application.dataPath + "/" + myScript.path);
+            FileUtil.DeleteFileOrDirectory(Application.dataPath + "/OutputExperiment");
+
+            var graph = myScript.graphTest.GetComponent<GRAPHTEST>().GenerateGraph();
             
-            myScript.Execute();
+            var (acoMap,data) = myScript.Execute(graph);
+
+            // Generate images
+            for (int i = 0; i < acoMap.Count; i++)
+            {
+                //Utils.GenerateImage(acoMap[i],graph, "aco_Map_"+i+".png", Application.dataPath +"/"+ path);
+                Utils.GenerateSizedImage(acoMap[i], graph, 40, "aco_Map_" + i + ".png", Application.dataPath + "/OutputExperiment/" + graph.name);
+            }
+
+            Utils.GenerateCSV<Data>(data, "data.csv", Application.dataPath + "/OutputExperiment");
+
+            AssetDatabase.Refresh();
+        }
+
+        if(GUILayout.Button("Run All"))
+        {
+            FileUtil.DeleteFileOrDirectory(Application.dataPath + "/OutputExperiment");
+
+            var gs = FindObjectsOfType<GRAPHTEST>();
+
+            foreach (var g in gs)
+            {
+                var graph = g.GenerateGraph();
+                var (acoMap, data) = myScript.Execute(graph);
+
+                // Generate images
+                for (int i = 0; i < acoMap.Count; i++)
+                {
+                    //Utils.GenerateImage(acoMap[i],graph, "aco_Map_"+i+".png", Application.dataPath +"/"+ path);
+                    Utils.GenerateSizedImage(acoMap[i], graph, 40, "aco_Map_" + i + ".png", Application.dataPath + "/OutputExperiment/" + graph.name);
+                }
+
+                Utils.GenerateCSV<Data>(data, "data.csv", Application.dataPath + "/OutputExperiment");
+            }
             AssetDatabase.Refresh();
         }
     }

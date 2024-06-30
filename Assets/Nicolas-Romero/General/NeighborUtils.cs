@@ -196,6 +196,11 @@ namespace Problem.Neigbors
 
 namespace Optimization.Neigbors
 {
+    public interface IGetNeigbor
+    {
+        public (object, string) Execute(object obj);
+    }
+
     public interface IGetNeighbors
     {
         public List<(object,string)> Execute(object obj);
