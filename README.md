@@ -8,6 +8,8 @@ El proyecto fue desarrollado en Unity Engine en la versión 2022.3.15f1. Se reco
 
 Al abrir el proyecto con Unity, este abrirá en modo default. Para poder acceder al funcionamiento, se debe dar doble clic a la escena “SampleScene” que se encuentra en la ruta `Assets > Scene`.
 
+![Descripción de la imagen](ReadMe_IMG/image6.png)
+
 Al abrir esta escena, podrás ver la jerarquía de la escena con una serie de objetos. El objeto llamado **ACO Experiment** contiene el código que permite ejecutar la solución. Además del código del experimento, se listan los grafos descritos en el informe.
 
 En el área central, podrás ver gráficamente cómo estos grafos se encuentran distribuidos. Puedes hacer doble clic sobre los nombres de los esquemas para que la cámara de la visualización se centre en estos.
