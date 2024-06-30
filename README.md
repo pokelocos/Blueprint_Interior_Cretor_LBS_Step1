@@ -8,13 +8,19 @@ El proyecto fue desarrollado en Unity Engine en la versión 2022.3.15f1. Se reco
 
 Al abrir el proyecto con Unity, este abrirá en modo default. Para poder acceder al funcionamiento, se debe dar doble clic a la escena “SampleScene” que se encuentra en la ruta `Assets > Scene`.
 
-![Descripción de la imagen](ReadMe_IMG/image6.png)
+![img1](ReadMe_IMG/image6.png)
 
 Al abrir esta escena, podrás ver la jerarquía de la escena con una serie de objetos. El objeto llamado **ACO Experiment** contiene el código que permite ejecutar la solución. Además del código del experimento, se listan los grafos descritos en el informe.
 
+![img2](ReadMe_IMG/image6.png)
+
 En el área central, podrás ver gráficamente cómo estos grafos se encuentran distribuidos. Puedes hacer doble clic sobre los nombres de los esquemas para que la cámara de la visualización se centre en estos.
 
+![img3](ReadMe_IMG/image6.png)
+
 A continuación, se explican los componentes que permiten controlar la solución:
+
+![img4](ReadMe_IMG/image6.png)
 
 - **GraphTest**: Es una referencia a uno de los esquemas en escena.
 - **Iteration**: Corresponde al número de iteraciones que se ejecutará la solución.
@@ -34,6 +40,10 @@ A continuación, se explican los componentes que permiten controlar la solución
 
 Todos los archivos de código se encuentran en la ruta `Assets > Nicolas-Romero`.
 
+![img5](ReadMe_IMG/image6.png)
+
 Al momento de ejecutarse la solución, se creará una carpeta `OutputExperiment`. Dicha carpeta contendrá una subcarpeta de la solución generada y la data a extraer para el análisis.
+
+![img6](ReadMe_IMG/image6.png)
 
 **OJO:** Al ser ejecutada nuevamente, la solución elimina la carpeta `OutputExperiment` y todo su contenido. Si se requiere volver a ejecutar la solución, se recomienda mover el contenido que se desea guardar de esta ruta para evitar que esta sea eliminada por error.
