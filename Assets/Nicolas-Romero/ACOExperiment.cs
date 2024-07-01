@@ -122,7 +122,7 @@ public class ACOExperimentEditor : Editor
                 Utils.GenerateSizedImage(acoMap[i], graph, 40, "aco_Map_" + i + ".png", Application.dataPath + "/OutputExperiment/" + graph.name);
             }
 
-            Utils.GenerateCSV<Data>(data, "data.csv", Application.dataPath + "/OutputExperiment");
+            Utils.GenerateCSV<Data>(data, "data.csv", Application.dataPath + "/OutputExperiment/" + graph.name);
 
             AssetDatabase.Refresh();
         }

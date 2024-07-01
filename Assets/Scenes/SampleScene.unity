@@ -507,8 +507,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   graphTest: {fileID: 623292645}
-  iterations: 10
-  antsPerIteration: 200
+  iterations: 30
+  antsPerIteration: 100
   pheromoneIntensity: 1
   evaporationRate: 0.9
   seed: 

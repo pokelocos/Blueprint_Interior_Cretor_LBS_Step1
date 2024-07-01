@@ -18,13 +18,19 @@ public class Data // TODO: implementar despues de probar que el esxperimento fun
         public float totalTime;
         public float explorationTime;
         public float evaluatorTime;
+
         public float genBest;
-        public (List<Map>, float) best;
         public float average;
+
+        // podria sacar la evaluacion de cada uno de los optimizadores
+
+        public int niegExplored;
         public int successfulPathCount;
         public int deadEndCount;
     }
 
+    public (List<Map>, float) best;
+    public int totalNeigsExplored;
     public List<generacion> generations = new ();
 
     // tiempo total de ejecucion
@@ -45,16 +51,21 @@ public class ACO
 
         float bestEval = float.MinValue;
         List<Map> best = new();
-        
+        float bestNCEval = float.MinValue;
+        List<Map> bestNoCompleted = new();
 
         // obtengo los nodos ordenados por la cantidad de vecinos
         var predeterminePath = GetNodeSortedByNeigs(graph);
 
         var swTotal = new System.Diagnostics.Stopwatch(); // <- For TESTING
         swTotal.Start();// <- For TESTING
+
+        var prevExplored = 0;
+
         // cata iteracion del while es una nueva generacion de hormigas
         while (!terminator.Execute())
         {
+            prevExplored = mapNeigs.Count; 
             float bestGenEval = float.MinValue;
             List<Map> bestGen = new();
             float averageCumulated = 0;
@@ -84,8 +95,20 @@ public class ACO
                 // si la hormiga no termino el camino
                 if (path.Count < graph.nodes.Count)
                 {
+                    var lastNC = path.Last();
+                    var evNC = evaluator.Execute(lastNC);
+
+                    if (bestNCEval < evNC)
+                    {
+                        bestNCEval = evNC;
+                        bestNoCompleted = path;
+                    }
                     gen.deadEndCount++; // <- For TESTING
                     continue; // no suma feromonas
+                }
+                else
+                {
+                    gen.successfulPathCount++; // <- For TESTING
                 }
 
                 var last = path.Last();
@@ -125,23 +148,32 @@ public class ACO
 
             swGen.Stop();
             gen.totalTime = swGen.ElapsedMilliseconds; // <- For TESTING
-            gen.successfulPathCount = paths.Count; // <- For TESTING
-            gen.deadEndCount = antCount - paths.Count; // <- For TESTING
             if (bestEval < bestGenEval)
             {
                 bestEval = bestGenEval;
                 best = bestGen;
             }
             gen.genBest = bestGenEval; // <- For TESTING
-            gen.best = (best, bestEval); // <- For TESTING
             gen.average = (paths.Count != 0)? averageCumulated/(paths.Count) : -1; // <- For TESTING
+            gen.niegExplored = mapNeigs.Count - prevExplored; // <- For TESTING
             data.generations.Add(gen); // <- For TESTING
 
         }
         swTotal.Stop(); // <- For TESTING
         data.totalTime = swTotal.ElapsedMilliseconds; // <- For TESTING
+        data.totalNeigsExplored = mapNeigs.Count; // <- For TESTING
 
-        return (best, data);
+        if(best.Count != 0)
+        {
+            data.best = (best, bestEval); // <- For TESTING
+            return (best, data);
+        }
+        else
+        {
+            data.best = (bestNoCompleted, bestNCEval); // <- For TESTING
+            return (bestNoCompleted, data);
+        }
+
     }
 
     /// <summary>

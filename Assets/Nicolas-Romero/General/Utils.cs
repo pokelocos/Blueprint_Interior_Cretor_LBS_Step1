@@ -235,11 +235,11 @@ public static class Utils
                 "TotalTime;" +              // 2
                 "ExplorationTime;" +        // 3
                 "EvaluatorTime;" +          // 4
-                "BestPathValue;" +          // 5
                 "BestGenPath;" +            // 6
                 "AveragePathValue;" +       // 7
                 "SuccessfulPathCount;" +    // 8
-                "DeadEndCount");            // 9
+                "DeadEndCount;" +            // 9
+                "NeigExplored");            // 10
 
             // Iterar sobre las generaciones y añadir datos
             for (int i = 0; i < experimentData.generations.Count; i++)
@@ -249,16 +249,18 @@ public static class Utils
                     $"{gen.totalTime}e-03;" +           // TotalTime 2
                     $"{gen.explorationTime}e-03;" +     // ExplorationTime 3
                     $"{gen.evaluatorTime}e-03;" +       // EvaluatorTime 4
-                    $"{gen.best.Item2};" +              // BestPathValue 5
                     $"{gen.genBest};" +                 // BestGenPath 6
                     $"{gen.average};" +                 // AveragePathValue 7
                     $"{gen.successfulPathCount};" +     // SuccessfulPathCount 8
-                    $"{gen.deadEndCount}";              // DeadEndCount 9
+                    $"{gen.deadEndCount};" +             // DeadEndCount 9
+                    $"{gen.niegExplored}";             // neigExplored 10
                 csvContent.AppendLine(line);
             }
 
             // Añadir tiempo total de ejecución al final del archivo CSV
             csvContent.AppendLine($"Total Execution Time;{experimentData.totalTime}");
+            csvContent.AppendLine($"TotalNeigExplored;{experimentData.totalNeigsExplored}");
+            csvContent.AppendLine($"Best;{experimentData.best.Item2}");
 
             if (!Directory.Exists(folderPath))
             {
