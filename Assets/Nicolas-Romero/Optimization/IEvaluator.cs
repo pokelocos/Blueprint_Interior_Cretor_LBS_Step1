@@ -35,6 +35,31 @@ namespace Optimization.Evaluators
             return total;
         }
     }
+
+    public class BetterAgregateEvaluator : IEvaluator
+    {
+        public IEvaluator[] evs;
+
+        public float Execute(object obj)
+        {
+            if (evs == null || evs.Length == 0)
+            {
+                Debug.LogWarning("No Tiene Sub-Evalaudores.");
+                return -1;
+            }
+
+            var max = float.MinValue;
+            foreach (var e in evs)
+            {
+                var value = e.Execute(obj);
+                if (value > max)
+                {
+                    max = value;
+                }
+            }
+            return max;
+        }
+    }
 }
 
 namespace Problem.Evaluators
@@ -97,6 +122,48 @@ namespace Problem.Evaluators
             //return 1 - ((n - min) / (max - min)); // FIX: si n es menor que min, el resutlado mas que 1
         }
     }
+
+    public class MirrorAxisEvaluator : IEvaluator
+    {
+        public Vector2 split = Vector2.up;
+
+        public float Execute(object obj)
+        {
+            var toR = 0f;
+
+            var map = (Map)obj;
+            var normal = new Vector2(-split.y, split.x);
+
+            foreach (var (id, room) in map.rooms)
+            {
+               foreach (var (pos, tile) in room)
+               {
+                    var reflected = ReflexPoint(pos, normal);
+                    var r = new Vector2Int((int)reflected.x, (int)reflected.y);
+
+                    if (!map.rooms.Any(d => d.Value.ContainsKey(r)))
+                    {
+                        toR++;
+                    }
+                }
+            }
+
+            return toR / map.rooms.Sum(r => r.Value.Count);
+        }
+
+        private Vector2 ReflexPoint(Vector2 point, Vector2 lineUnitVector) // esta podria esta en una clase "Utils" (!)
+        {
+            Vector2 projection = ProjectPointOnLine(point, lineUnitVector);
+            return 2 * projection - point;
+        }
+
+        private Vector2 ProjectPointOnLine(Vector2 point, Vector2 lineUnitVector) // esta podria esta en una clase "Utils" (!)
+        {
+            float dotProduct = Vector2.Dot(point, lineUnitVector);
+            return dotProduct * lineUnitVector;
+        }
+    }
+
 }
 
 namespace Optimization.Restrictions

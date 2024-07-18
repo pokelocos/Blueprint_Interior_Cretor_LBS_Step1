@@ -41,12 +41,18 @@ public class ACO
 {
     public Dictionary<Map, Dictionary<Map, float>> mapNeigs = new(); // from -> L(to, pheromone)
 
+    public Dictionary<(Map, Graph.Node), List<(Vector2Int, Vector2Int)>> movmenets = new(); // (from,currentNode) -> unused L(pivot,size) 
+
     public bool enforceGraph = true;
 
     public Data data;
 
-    public (List<Map>,Data) Execute(Graph graph, int antCount,float pherIntnesity, float disipacion, IEvaluator evaluator, ITerminator terminator,IRestriction restriction)
+    public (List<Map>, Data) Execute(Graph graph, int antCount, float pherIntnesity, float disipacion, IEvaluator evaluator, ITerminator terminator, IRestriction restriction)
     {
+        // reset
+        mapNeigs = new(); // puede que esto sobre
+        movmenets = new(); // puede que esto sobre
+
         var data = new Data();// <- For TESTING
 
         float bestEval = float.MinValue;
@@ -57,38 +63,38 @@ public class ACO
         // obtengo los nodos ordenados por la cantidad de vecinos
         var predeterminePath = GetNodeSortedByNeigs(graph);
 
-        var swTotal = new System.Diagnostics.Stopwatch(); // <- For TESTING
-        swTotal.Start();// <- For TESTING
+        //var swTotal = new System.Diagnostics.Stopwatch(); // <- For TESTING
+        //swTotal.Start();// <- For TESTING
 
         var prevExplored = 0;
 
         // cata iteracion del while es una nueva generacion de hormigas
         while (!terminator.Execute())
         {
-            prevExplored = mapNeigs.Count; 
+            prevExplored = mapNeigs.Count;
             float bestGenEval = float.MinValue;
             List<Map> bestGen = new();
             float averageCumulated = 0;
 
-            var gen = new Data.generacion();
-            var swGen = new System.Diagnostics.Stopwatch(); // <- For TESTING
-            swGen.Start();// <- For TESTING
+            //var gen = new Data.generacion();
+            //var swGen = new System.Diagnostics.Stopwatch(); // <- For TESTING
+            //swGen.Start();// <- For TESTING
 
             var paths = new List<List<Map>>(); // last node added, currentmap
 
-            var swExplore = new System.Diagnostics.Stopwatch(); // <- For TESTING
-            swExplore.Start();// <- For TESTING
+            //var swExplore = new System.Diagnostics.Stopwatch(); // <- For TESTING
+            //swExplore.Start();// <- For TESTING
             // cada hormiga explora un camino hasta llegar a completar un mapa con todas las habitaciones
             for (int i = 0; i < antCount; i++)
             {
-                var path = AntPath(graph, predeterminePath, restriction);
+                var path = AntPathBT(graph, predeterminePath, restriction);
                 paths.Add(path);
             }
-            swExplore.Stop();// <- For TESTING
-            gen.explorationTime = swExplore.ElapsedMilliseconds;// <- For TESTING
+            //swExplore.Stop();// <- For TESTING
+            //gen.explorationTime = swExplore.ElapsedMilliseconds;// <- For TESTING
 
-            var swEval = new System.Diagnostics.Stopwatch(); // <- For TESTING
-            swEval.Start();// <- For TESTING
+            //var swEval = new System.Diagnostics.Stopwatch(); // <- For TESTING
+            //swEval.Start();// <- For TESTING
             // por cada camino regreso las hormigas y aplico la pheromona
             foreach (var path in paths)
             {
@@ -103,16 +109,16 @@ public class ACO
                         bestNCEval = evNC;
                         bestNoCompleted = path;
                     }
-                    gen.deadEndCount++; // <- For TESTING
+                    //gen.deadEndCount++; // <- For TESTING
                     continue; // no suma feromonas
                 }
                 else
                 {
-                    gen.successfulPathCount++; // <- For TESTING
+                    //gen.successfulPathCount++; // <- For TESTING
                 }
 
                 var last = path.Last();
-                
+
                 // evaluo el camino
                 var pathEval = evaluator.Execute(last);
                 averageCumulated += pathEval;
@@ -133,8 +139,8 @@ public class ACO
                     mapNeigs[cur][next] += (pathEval * pherIntnesity);
                 }
             }
-            swEval.Stop();
-            gen.evaluatorTime = swEval.ElapsedMilliseconds; // <- For TESTING
+            //swEval.Stop();
+            //gen.evaluatorTime = swEval.ElapsedMilliseconds; // <- For TESTING
 
             // disminuyo la feromona
             foreach (var (from, edge) in mapNeigs)
@@ -146,24 +152,24 @@ public class ACO
                 }
             }
 
-            swGen.Stop();
-            gen.totalTime = swGen.ElapsedMilliseconds; // <- For TESTING
+            //swGen.Stop();
+            //gen.totalTime = swGen.ElapsedMilliseconds; // <- For TESTING
             if (bestEval < bestGenEval)
             {
                 bestEval = bestGenEval;
                 best = bestGen;
             }
-            gen.genBest = bestGenEval; // <- For TESTING
-            gen.average = (paths.Count != 0)? averageCumulated/(paths.Count) : -1; // <- For TESTING
-            gen.niegExplored = mapNeigs.Count - prevExplored; // <- For TESTING
-            data.generations.Add(gen); // <- For TESTING
+            //gen.genBest = bestGenEval; // <- For TESTING
+            //gen.average = (paths.Count != 0) ? averageCumulated / (paths.Count) : -1; // <- For TESTING
+            //gen.niegExplored = mapNeigs.Count - prevExplored; // <- For TESTING
+            //data.generations.Add(gen); // <- For TESTING
 
         }
-        swTotal.Stop(); // <- For TESTING
-        data.totalTime = swTotal.ElapsedMilliseconds; // <- For TESTING
+        //swTotal.Stop(); // <- For TESTING
+        //data.totalTime = swTotal.ElapsedMilliseconds; // <- For TESTING
         data.totalNeigsExplored = mapNeigs.Count; // <- For TESTING
 
-        if(best.Count != 0)
+        if (best.Count != 0)
         {
             data.best = (best, bestEval); // <- For TESTING
             return (best, data);
@@ -177,60 +183,108 @@ public class ACO
     }
 
     /// <summary>
-    /// XXX
+    /// Regresa una lista de mapas que representan el camino de una hormiga,
+    /// si encuentra un camino que no cumple con las restricciones, regresa
+    /// e intenta explorar otro camino.
     /// </summary>
     /// <param name="graph"></param>
     /// <param name="path"></param>
     /// <returns></returns>
-    private List<Map> AntPath(Graph graph, List<(Graph.Node, Graph.Node)> path,IRestriction restriction)
+    private List<Map> AntPathBT(Graph graph, List<(Graph.Node, Graph.Node)> path, IRestriction restriction)
     {
-        Map current = GenerateFirst(path[0].Item2);
-        var pathList = new List<Map>();
-        pathList.Add(current);
+        int FailAmount = 15;
 
+        Map currentMap = GenerateFirst(path[0].Item2);
+        var pathList = new List<Map>();
+        pathList.Add(currentMap);
+
+        Map lastMap = null;
         for (int i = 1; i < path.Count; i++)
         {
-            var (nPrev, nCurrent) = path[i];
 
-            if (!mapNeigs.ContainsKey(current))
+            if (FailAmount <= 0) // parche para que no se quede pegao el codigo (PARCHE)
             {
-                mapNeigs.Add(current, new Dictionary<Map, float>());
+                Debug.Log("la hormiga fallo en  encontrar caminos validos");
+                return pathList;
             }
 
-            //var neigs = mapNeigs[current];
-            mapNeigs.TryGetValue(current, out var neigs);
+            var (nPrev, nCurrent) = path[i];
+
+            if (!mapNeigs.ContainsKey(currentMap))
+            {
+                mapNeigs.Add(currentMap, new Dictionary<Map, float>());
+            }
+
+            mapNeigs.TryGetValue(currentMap, out var neigs);
 
             // si ya explore alguno continua algun de esos 
             var validAmount = ValidsPathAmount(neigs);
-            var rValue = UnityEngine.Random.Range(0f, validAmount + 1f);
+            var rValue = UnityEngine.Random.Range(0f, validAmount + 1f); // el 1 podria ser una variable de ajuste (!!!)
             if (rValue < validAmount)
             {
                 // si existe elijo por pheromona
                 var select = neigs.ToList().RandomRullete(n => n.Value);
                 pathList.Add(select.Key);
-                current = select.Key;
+                currentMap = select.Key;
             }
             else // o decido si seguir explorando
             {
-                // creo un nuevo diccionario
-                var (neig, value) = AntExplore(current, graph, nPrev, nCurrent, restriction);
+                // pregunto si me quedan caminos por explorar SI NO, retorno
+                if (!CanExplore(currentMap, graph, nPrev, nCurrent))
+                {
+                    // si no puedo explorar marco el mapa actual como pheromonas 0
+                    mapNeigs[lastMap][currentMap] = 0;                  // ojo
+                    // retrocedo
+                    i-=2;                                               // cheacar si esto es correcto haciendo lo paso a poaso (!!!)
+                    FailAmount--;
+                    continue;
+                    //return pathList;
+                }
 
-                if(value > 0)
+                // creo un nuevo diccionario
+                var (neig, value) = AntExplore(currentMap, graph, nCurrent, restriction);
+                //var (neig, value) = AntExplore(currentMap, graph, nPrev, nCurrent, restriction);
+
+                if (value > 0)
                 {
                     pathList.Add(neig);
-                    current = neig;
+                    currentMap = neig;
                 }
                 else
                 {
-                    return pathList;
+                    i--;
+                    FailAmount--;
+                    //return pathList;// <- por aqui deberia ir un "Si falla explora denuevo"
                 }
+            }
+
+            lastMap = currentMap;
+
+
+            if(i == 0)
+            {
+                Debug.Log("Mapa explorado al completo, imposible de terminar");
+                return pathList;
             }
         }
 
         return pathList;
     }
 
-    public int ValidsPathAmount(Dictionary<Map,float> neigs)
+    public bool CanExplore(Map current, Graph graph, Graph.Node nodePrev, Graph.Node nodeCurrent)
+    {
+        movmenets.TryGetValue((current, nodeCurrent), out var validPivots);
+        if (validPivots == null)
+        {
+            // genero la lista de pivotes validos
+            validPivots = GeneratePivotsNeigs(current, graph, nodePrev, nodeCurrent);
+            movmenets.Add((current, nodeCurrent), validPivots);
+        }
+
+        return validPivots.Count != 0;
+    }
+
+    public int ValidsPathAmount(Dictionary<Map, float> neigs)
     {
         var sum = 0;
         for (int j = 0; j < neigs.Count; j++)
@@ -267,68 +321,77 @@ public class ACO
         return init;
     }
 
-    /*
-     *      if (!transitable)
-                    {
-                        var roots = GetRoots(current);
-                        foreach (var root in roots)
-                            mapNeigs[root][current] = 0;
-
-                        return pathList;
-                    }*/
-
-
-
-    public (Map, float) AntExplore(Map current, Graph graph, Graph.Node nodePrev, Graph.Node nodeCurrent, IRestriction restriction)
+    public (Map, float) AntExplore(Map currentMap, Graph graph, Graph.Node nodeCurrent, IRestriction restriction)
     {
-        // selecciono un tamaño para la nueva habitacion
-        var w = UnityEngine.Random.Range((int)nodeCurrent.minArea.x, (int)nodeCurrent.maxArea.x + 1);
-        var h = UnityEngine.Random.Range((int)nodeCurrent.minArea.y, (int)nodeCurrent.maxArea.y + 1);
-
-        // obtengo los posibles pivotes para ese tamaño
-        var pivots = GetPivotsNeigs(nodePrev.pos + nodeCurrent.pos,new Vector2Int(w,h), nodePrev.id, current);
-
-        // selecciono uno aleatorio
-        var pivot = pivots.GetRandom();
-        var other = current.Clone() as Map;
-        other.SetRoomTiles(pivot, pivot + nodeCurrent.maxArea, nodeCurrent.id);
-        
-        // no son añadidos si no cumplen con la restriccion
-        if (restriction.Execute(new Tuple<Map, Graph>(other, graph)))
+        movmenets.TryGetValue((currentMap, nodeCurrent), out var validPivots);
+        /*
+        if(validPivots == null)
         {
-            if (!mapNeigs[current].ContainsKey(other))
+            // genero la lista de pivotes validos
+            validPivots = GeneratePivotsNeigs(currentMap, graph, nodeCurrent, nodeCurrent);
+            movmenets.Add((currentMap, nodeCurrent), validPivots);
+        }
+        */
+
+        var (pivot, size) = validPivots.GetRandom(); // selecciona un pivote y tamaño para colocar la nueva habitacion
+        var nextMap = currentMap.Clone() as Map;
+        nextMap.SetRoomTiles(pivot, pivot + size, nodeCurrent.id);
+
+        // no son añadidos si no cumplen con la restriccion
+        if (restriction.Execute(new Tuple<Map, Graph>(nextMap, graph)))                          // la restricciones podria estar afuera (!!!)
+        {
+            if (!mapNeigs[currentMap].ContainsKey(nextMap))
             {
-                mapNeigs[current].Add(other, 1);
+                mapNeigs[currentMap].Add(nextMap, 1); // este valor podria ser una heuristica tambien
             }
-            return (other, 1);
+            return (nextMap, 1);
 
         }
         else
         {
-            if (!mapNeigs[current].ContainsKey(other))
+            if (!mapNeigs[currentMap].ContainsKey(nextMap))
             {
-                mapNeigs[current].Add(other, 0);
+                mapNeigs[currentMap].Add(nextMap, 0);
             }
-            return (other, 0);
+            return (nextMap, 0);
         }
     }
 
-    private List<Map> GenerateNeigs(Map prev, Graph graph, Graph.Node nodePrev, Graph.Node nodeCurrent)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="current"></param>
+    /// <param name="graph"></param>
+    /// <param name="nodePrev"></param>
+    /// <param name="nodeCurrent"></param>
+    /// <returns></returns>
+    public List<(Vector2Int, Vector2Int)> GeneratePivotsNeigs(Map current, Graph graph, Graph.Node nodePrev, Graph.Node nodeCurrent)
     {
-        var toR = new List<Map>();
-
-        // obtengo los posibles pivotes
-        var pivots = GetPivotsNeigs(nodePrev.pos + nodeCurrent.pos, nodeCurrent.maxArea,nodePrev.id, prev);
-
-        // por cada pivote
-        for (int i = 0; i < pivots.Count; i++)
+        // genero todas las combinaciones de tamaño de la nueva habitacion
+        var allSizes = new List<Vector2Int>();
+        for (int i = nodeCurrent.minArea.x; i <= nodeCurrent.maxArea.x; i++)
         {
-            var other = prev.Clone() as Map;
-            other.SetRoomTiles(pivots[i], pivots[i] + nodeCurrent.maxArea, nodeCurrent.id);
-            toR.Add(other);
+            for (int j = nodeCurrent.minArea.y; j <= nodeCurrent.maxArea.y; j++)
+            {
+                allSizes.Add(new Vector2Int(i, j));
+            }
         }
 
-        return toR;
+        // para cada tamaño
+        var allPivots = new List<(Vector2Int, Vector2Int)>();
+        foreach (var size in allSizes)
+        {
+            // genero todos los pivotes validos en base a la direccion 
+            var (pivots,emptyPos) = GetPivotsNeigs(nodeCurrent.pos - nodePrev.pos, size, nodePrev.id, current);
+            foreach (var (p, s) in pivots) 
+            {
+                allPivots.Add((p, s));
+            }
+        }
+
+        //GetPivotsNeigs(nodePrev.pos + nodeCurrent.pos, new Vector2Int(w, h), nodePrev.id, current);
+
+        return allPivots;
     }
 
     /// <summary>
@@ -338,7 +401,7 @@ public class ACO
     /// </summary>
     /// <param name="graph"></param>
     /// <returns> a tuple [from -> to]</returns>
-    private List<(Graph.Node, Graph.Node)> GetNodeSortedByNeigs(Graph graph)
+    private List<(Graph.Node, Graph.Node)> GetNodeSortedByNeigs(Graph graph) // mover esto como una funcion SORT
     {
         var added = new List<Graph.Node>();
         var toR = new List<(Graph.Node, Graph.Node)>();
@@ -352,7 +415,7 @@ public class ACO
             var (prev, current) = toAdd.Dequeue();
 
             // si ya esta en la lista lo salto
-            if(added.Contains(current))
+            if (added.Contains(current))
                 continue;
 
             toR.Add((prev, current));
@@ -362,7 +425,7 @@ public class ACO
             neigs = neigs.OrderByDescending((n) => {
                 var amount = added.Intersect(graph.GetNeighbors(n)).Count();
                 return amount;
-                }).ToList();
+            }).ToList();
             foreach (var n in neigs)
             {
                 if (!added.Contains(n))
@@ -370,6 +433,72 @@ public class ACO
             }
         }
         return toR;
+    }
+
+    /*
+    private List<(Vector2Int,Vector2Int)> GetPivotAllowedCurrentNeigs(Vector2Int sizeArea,int roomID,Map map,Graph graph,Graph.Node current)
+    {
+        // obtengo vecinos del nodo actual
+        var neigs = graph.GetNeighbors(current);
+
+        // me quedo con los vecinos que ya estan en el mapa
+        neigs = neigs.Where(n => map.rooms[n.id] != null).ToList();
+
+        // inicializo una lista de pivotes permitidos (pivot,size)
+        var allPivots = new List<List<(Vector2Int, Vector2Int)>>();
+        // inicializo una lista de posiciones vacias de cada vecino
+        var allAdjacents = new List<List<Vector2Int>>();
+
+        foreach (var nei in neigs)
+        {
+            // obtengo la habitacion correspondiente al nodo
+            var neigRoom = map.rooms[nei.id];
+
+            // obtengo la direcciones a la que se encuentra la nueva habitacion
+            var vec = nei.pos + current.pos;
+
+            // obtengo los pivoten entre los nodos y las posiciones vacias adjacentes
+            var (pivots, adjeacents) = GetPivotsNeigs(vec, sizeArea, roomID, map);
+            allPivots.Add(pivots);
+            allAdjacents.Add(adjeacents);
+        }
+
+        var toR = new List<(Vector2Int, Vector2Int)>();
+        for (int i = 0; i < allPivots.Count; i++)
+        {
+            var pivots = allPivots[i];
+
+            foreach (var (pivot,size) in pivots)
+            {
+                var allowed = true;
+                for (int j = 0; j < allAdjacents.Count; j++)
+                {
+                    if (i == j)
+                        continue;
+
+                    var adjs = allAdjacents[j];
+
+                    if (!adjs.Any( ad => Contained(pivot,size, ad)))
+                    {
+                        allowed = false;
+                        break;
+                    }
+                }
+
+                if(allowed)
+                    toR.Add((pivot, size));
+            }
+        }
+
+        return toR;
+    }
+    */
+
+
+    public bool Contained(Vector2Int pivot,Vector2Int size,Vector2Int pos) // esto podria ir en un "Utils"
+    {
+        var end = pivot + size;
+        return pos.x >= pivot.x && pos.x <= end.x && pos.y >= pivot.y && pos.y <= end.y;
     }
 
     /// <summary>
@@ -381,19 +510,19 @@ public class ACO
     /// <param name="roomID"></param>
     /// <param name="map"></param>
     /// <returns></returns>
-    private List<Vector2Int> GetPivotsNeigs(Vector2 nodeVector, Vector2Int sizeArea, int roomID, Map map)
+    private (List<(Vector2Int,Vector2Int)>,List<Vector2Int>) GetPivotsNeigs(Vector2 nodeVector, Vector2Int sizeArea, int roomID, Map map)
     {
-        var toR = new List<Vector2Int>();
+        var toR = new List<(Vector2Int,Vector2Int)>();
 
         // obtengo la direcciones a la que se encuentra la nueva habitacion
         var dirs = !enforceGraph ?
             Directions.AllDirs():
             Directions.AngulatedDirs(nodeVector);
 
-
         // obtengo la habitacion anterior
         var room = map.rooms[roomID];
 
+        var toR2 = new List<Vector2Int>();
         foreach (var dir in dirs)
         {
             if (dir == Directions.Dirs_4.None)
@@ -401,13 +530,13 @@ public class ACO
 
             // obtengo las posiciones vacias
             var emptyPos = GetAdjacent(dir, room);
+            toR2.AddRange(emptyPos);
 
             // obtengo el desplazamiento principal
-            var starDisp = (StartDisp(dir) * sizeArea);// - StartDisp(dir);
-            //var v1 = Vector2Int.zero;
+            var starDisp = (StartDisp(dir) * sizeArea - StartDisp(dir)); /// <----------
 
             // obtengo el desplazamiento secundario
-            var endDisp = (EndDisp(dir) * sizeArea);// - EndDisp(dir);
+            var endDisp = (EndDisp(dir) * sizeArea - EndDisp(dir));
 
             foreach (var pos in emptyPos)
             {
@@ -416,22 +545,14 @@ public class ACO
 
                 foreach (var point in dispacedPoints)
                 {
-                    // obtengo el pivote
-                    //var pivot = pos + v2;//v1 + v2;
-
                     // si no esta en la lista lo añado
-                    if (!toR.Contains(point))
-                        toR.Add(point);
-
-                    // si no esta en la lista lo añado
-                    //if (!toR.Contains(pivot))
-                    //    toR.Add(pivot);
+                    if (!toR.Contains((point, sizeArea)))
+                        toR.Add((point, sizeArea));
                 }
-
             }
         }
 
-        return toR;  // FIX: los numeros podrian estar mas distantes de lo que deberian
+        return (toR,toR2); 
     }
 
     private List<Vector2Int> GetAdjacent(Directions.Dirs_4 dir,Dictionary<Vector2Int,Tile> room)

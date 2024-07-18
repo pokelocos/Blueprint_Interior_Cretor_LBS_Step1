@@ -506,7 +506,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d3a0efeeaa8fa54081ad8b1942af221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  graphTest: {fileID: 623292645}
+  graphTest: {fileID: 1059297461}
   iterations: 30
   antsPerIteration: 100
   pheromoneIntensity: 1
@@ -2969,8 +2969,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91fb100903990f043a925116cfb5418f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minArea: {x: 4, y: 4}
-  maxArea: {x: 6, y: 6}
+  minArea: {x: 2, y: 2}
+  maxArea: {x: 3, y: 3}
   type: 0
   color: {r: 0.55560166, g: 0.40387744, b: 0.33199996, a: 1}
   other:

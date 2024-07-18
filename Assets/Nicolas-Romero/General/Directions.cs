@@ -125,7 +125,7 @@ public static class Directions
         var toR = new List<Dirs_4>();
         var angle = Vector2.SignedAngle(Vector2.right, dir);
         //var toR = new List<Dirs_4>();
-        if (angle > 0 && angle <= 22.5f)
+        if (angle >= 0 && angle <= 22.5f)
         {
             toR.Add(Dirs_4.Right);
         }
