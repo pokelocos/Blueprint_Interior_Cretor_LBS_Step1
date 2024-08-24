@@ -24,7 +24,8 @@ namespace Optimization
         public bool enforceGraph = true;
 
 
-        public (List<Map>, Data) Execute(Graph graph, int antCount, float pherIntnesity, float disipacion, IEvaluator evaluator, ITerminator terminator, IRestriction restriction)
+        public (List<Map>, Data) Execute(Graph graph, int antCount, float pherIntnesity, float disipacion,
+            IEvaluator evaluator, ITerminator terminator, IRestriction restriction)
         {
             // Reset data
             ResetData();

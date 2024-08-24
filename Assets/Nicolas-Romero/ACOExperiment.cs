@@ -8,6 +8,7 @@ using Optimization.Evaluators;
 using Problem.Evaluators;
 using Optimization.Restrictions;
 using Problem.Restrictions;
+using Optimization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
