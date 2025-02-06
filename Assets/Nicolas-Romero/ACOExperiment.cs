@@ -22,7 +22,7 @@ public class ACOExperiment : MonoBehaviour
     public int antsPerIteration = 5;
     [Range(0.01f, 10)]
     public float pheromoneIntensity = 1f;
-    [Range(0.01f,099f)]
+    [Range(0.01f,0.99f)]
     public float evaporationRate = 0.9f;
 
     public string seed = "";
